@@ -4,35 +4,150 @@
     <meta charset="UTF-8">
     <title>Post a Recipe</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        input, textarea { display: block; width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; }
-        button { padding: 10px 20px; cursor: pointer; }
+        body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+        .form-group { margin-bottom: 20px; }
+        input[type="text"], textarea, select { width: 100%; padding: 10px; box-sizing: border-box; margin-top: 5px; font-size: 16px; }
+        
+        .dynamic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .dynamic-row input { margin-top: 0; flex: 1; }
+        .arrow { font-weight: bold; color: #555; }
+        .step-number { font-weight: bold; width: 30px; text-align: right; }
+        
+        .add-btn { background-color: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 14px; }
+        .remove-btn { background-color: #dc3545; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+        .submit-btn { background-color: #007bff; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body>
     <a href="/">← Back to Home</a>
     <h2>Post a New Recipe</h2>
+    
     <form id="postForm">
-        <input type="text" id="country" placeholder="Country (e.g., France)" required>
-        <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
-        <input type="text" id="photoUrl" placeholder="Photo URL (e.g., https://example.com/photo.jpg)">
-        <textarea id="method" placeholder="Cooking Method" rows="4" required></textarea>
-        <textarea id="ingredients" placeholder="Original Ingredients" rows="3" required></textarea>
-        <textarea id="substitutes" placeholder="Substitutes (e.g., Use local mushroom instead of Shiitake)" rows="3" required></textarea>
-        <button type="submit">Submit Recipe</button>
+        <div class="form-group">
+            <input type="text" id="userName" placeholder="Your Name (Author)" required>
+        </div>
+        
+        <div class="form-group">
+            <select id="country" required>
+                <option value="" disabled selected>Select a Country</option>
+                <option value="France">France</option>
+                <option value="Italy">Italy</option>
+                <option value="South Korea">South Korea</option>
+                <option value="USA">USA</option>
+                <option value="UK">UK</option>
+                <option value="Australia">Australia</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="photoUrl" placeholder="Photo URL (e.g., https://example.com/photo.jpg)">
+        </div>
+
+        <div class="form-group">
+            <h3>Ingredients & Substitutes</h3>
+            <p style="font-size: 14px; color: #666;">* Leave "Substitute" blank if not needed.</p>
+            <div id="ingredients-container">
+                <div class="dynamic-row">
+                    <input type="text" class="ing-original" placeholder="Original (e.g., Soy Sauce)" required>
+                    <span class="arrow">➔</span>
+                    <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
+                </div>
+            </div>
+            <button type="button" class="add-btn" onclick="addIngredient()">+ Add Ingredient</button>
+        </div>
+
+        <div class="form-group">
+            <h3>Cooking Method</h3>
+            <div id="steps-container">
+                <div class="dynamic-row step-row">
+                    <span class="step-number">1.</span>
+                    <input type="text" class="step-input" placeholder="Describe this step" required>
+                </div>
+            </div>
+            <button type="button" class="add-btn" onclick="addStep()">+ Add Step</button>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit Recipe</button>
     </form>
 
     <script>
+        function addIngredient() {
+            const container = document.getElementById('ingredients-container');
+            const row = document.createElement('div');
+            row.className = 'dynamic-row';
+            // 追加される行もrequiredを外し、Optionalに変更
+            row.innerHTML = `
+                <input type="text" class="ing-original" placeholder="Original" required>
+                <span class="arrow">➔</span>
+                <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addStep() {
+            const container = document.getElementById('steps-container');
+            const row = document.createElement('div');
+            row.className = 'dynamic-row step-row';
+            row.innerHTML = `
+                <span class="step-number"></span>
+                <input type="text" class="step-input" placeholder="Describe this step" required>
+                <button type="button" class="remove-btn" onclick="removeStep(this)">X</button>
+            `;
+            container.appendChild(row);
+            updateStepNumbers();
+        }
+
+        function removeStep(btn) {
+            btn.parentElement.remove();
+            updateStepNumbers();
+        }
+
+        function updateStepNumbers() {
+            const steps = document.querySelectorAll('.step-number');
+            steps.forEach((span, index) => {
+                span.textContent = `${index + 1}.`;
+            });
+        }
+
         document.getElementById('postForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const originalInputs = document.querySelectorAll('.ing-original');
+            const substituteInputs = document.querySelectorAll('.ing-substitute');
+            let ingredientsText = '';
+            let substitutesText = '';
+            
+            for (let i = 0; i < originalInputs.length; i++) {
+                ingredientsText += `・${originalInputs[i].value}\n`;
+                
+                // 代替品が空欄の場合は (None needed) として記録する
+                const subValue = substituteInputs[i].value.trim();
+                if (subValue !== '') {
+                    substitutesText += `・${subValue}\n`;
+                } else {
+                    substitutesText += `・(None needed)\n`;
+                }
+            }
+
+            const stepInputs = document.querySelectorAll('.step-input');
+            let methodText = '';
+            for (let i = 0; i < stepInputs.length; i++) {
+                methodText += `${i + 1}. ${stepInputs[i].value}\n`;
+            }
+
             const recipeData = {
+                author: document.getElementById('userName').value,
                 country: document.getElementById('country').value,
                 dishName: document.getElementById('dishName').value,
                 photoUrl: document.getElementById('photoUrl').value,
-                method: document.getElementById('method').value,
-                ingredients: document.getElementById('ingredients').value,
-                substitutes: document.getElementById('substitutes').value
+                ingredients: ingredientsText.trim(),
+                substitutes: substitutesText.trim(),
+                method: methodText.trim()
             };
 
             const response = await fetch('/api/recipes', {
@@ -42,7 +157,7 @@
             });
 
             if (response.ok) {
-                alert('Recipe posted successfully! Redirecting to browse page.');
+                alert('Recipe posted successfully!');
                 window.location.href = '/browse';
             }
         });
