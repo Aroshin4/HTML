@@ -33,10 +33,11 @@ app.get('/api/dish-names', (req, res) => {
 
 // Post a new recipe
 app.post('/api/recipes', (req, res) => {
-    const { country, dishName, photoUrl, method, ingredients, substitutes } = req.body;
+    const { author, country, dishName, photoUrl, method, ingredients, substitutes } = req.body;
     
     const newRecipe = {
         id: Date.now(),
+        author,
         country,
         dishName,
         photoUrl,
