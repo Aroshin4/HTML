@@ -70,6 +70,7 @@
             recipes.forEach(recipe => {
                 const card = document.createElement('div');
                 card.className = 'recipe-card';
+                /*
                 card.innerHTML = `
                     <h3>${recipe.dishName} (${recipe.country})</h3>
                     <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
@@ -90,6 +91,16 @@
                             <button type="submit">Submit</button>
                         </form>
                     </div>
+                `;
+                */
+                card.innerHTML = `
+                    <h3>
+                        <a href="/recipe/${recipe.id}">
+                            ${recipe.dishName}
+                        </a>
+                        (${recipe.country})
+                    </h3>
+                    <p>❤️ Likes: ${recipe.likes}</p>
                 `;
                 resultsDiv.appendChild(card);
             });
