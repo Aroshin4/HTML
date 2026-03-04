@@ -88,3 +88,19 @@ app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+// Get single recipe by ID
+app.get('/api/recipes/:id', (req, res) => {
+    const recipeId = parseInt(req.params.id);
+    const recipe = recipes.find(r => r.id === recipeId);
+
+    if (recipe) {
+        res.json(recipe);
+    } else {
+        res.status(404).json({ message: 'Recipe not found' });
+    }
+});
+
+app.get('/recipe/:id', (req, res) => {
+    res.sendFile(__dirname + '/recipe.html');
+});
