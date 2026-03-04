@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Detail</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+        img { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <a href="/browse">← Back to Browse</a>
+    <div id="recipe-detail"></div>
+
+    <script>
+        // URLからIDを取得
+        const id = window.location.pathname.split('/').pop();
+
+        async function fetchRecipe() {
+            const response = await fetch(`/api/recipes/${id}`);
+            const recipe = await response.json();
+
+            const container = document.getElementById('recipe-detail');
+
+            container.innerHTML = `
+                <h2>${recipe.dishName} (${recipe.country})</h2>
+                ${recipe.photoUrl ? `<img src="${recipe.photoUrl}">` : ''}
+                <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
+                <p><strong>Substitutes:</strong> ${recipe.substitutes}</p>
+                <p><strong>Method:</strong> ${recipe.method}</p>
+                <p>❤️ Likes: ${recipe.likes}</p>
+                <h3>Reviews</h3>
+                ${recipe.reviews.map(r => `
+                    <p>★${r.rating} - ${r.reviewerName}: ${r.comment}</p>
+                `).join('')}
+            `;
+        }
+
+        fetchRecipe();
+    </script>
+</body>
+</html>
