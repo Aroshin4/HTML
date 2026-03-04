@@ -7,6 +7,7 @@
         body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
         .form-group { margin-bottom: 20px; }
         input[type="text"], textarea, select { width: 100%; padding: 10px; box-sizing: border-box; margin-top: 5px; font-size: 16px; }
+        input[type="file"] { margin-top: 5px; font-size: 16px; }
         
         .dynamic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .dynamic-row input { margin-top: 0; flex: 1; }
@@ -43,8 +44,10 @@
         <div class="form-group">
             <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
         </div>
+        
         <div class="form-group">
-            <input type="text" id="photoUrl" placeholder="Photo URL (e.g., https://example.com/photo.jpg)">
+            <label for="photo" style="display:block; font-weight:bold;">Photo (Optional)</label>
+            <input type="file" id="photo" accept="image/*">
         </div>
 
         <div class="form-group">
@@ -79,7 +82,6 @@
             const container = document.getElementById('ingredients-container');
             const row = document.createElement('div');
             row.className = 'dynamic-row';
-            // 追加される行もrequiredを外し、Optionalに変更
             row.innerHTML = `
                 <input type="text" class="ing-original" placeholder="Original" required>
                 <span class="arrow">➔</span>
@@ -125,12 +127,11 @@
             for (let i = 0; i < originalInputs.length; i++) {
                 ingredientsText += `・${originalInputs[i].value}\n`;
                 
-                // 代替品が空欄の場合は (None needed) として記録する
                 const subValue = substituteInputs[i].value.trim();
                 if (subValue !== '') {
                     substitutesText += `・${subValue}\n`;
                 } else {
-                    substitutesText += `・(None needed)\n`;
+                    substitutesText += `・(None)\n`;
                 }
             }
 
@@ -140,20 +141,25 @@
                 methodText += `${i + 1}. ${stepInputs[i].value}\n`;
             }
 
-            const recipeData = {
-                author: document.getElementById('userName').value,
-                country: document.getElementById('country').value,
-                dishName: document.getElementById('dishName').value,
-                photoUrl: document.getElementById('photoUrl').value,
-                ingredients: ingredientsText.trim(),
-                substitutes: substitutesText.trim(),
-                method: methodText.trim()
-            };
+            // [変更] 画像ファイルを送るために FormData を使用する
+            const formData = new FormData();
+            formData.append('author', document.getElementById('userName').value);
+            formData.append('country', document.getElementById('country').value);
+            formData.append('dishName', document.getElementById('dishName').value);
+            formData.append('ingredients', ingredientsText.trim());
+            formData.append('substitutes', substitutesText.trim());
+            formData.append('method', methodText.trim());
+
+            // 画像ファイルが選択されていれば追加
+            const photoFile = document.getElementById('photo').files[0];
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
 
             const response = await fetch('/api/recipes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(recipeData)
+                // FormDataを送る際は 'Content-Type' ヘッダーを指定しない（ブラウザが自動で設定するため）
+                body: formData
             });
 
             if (response.ok) {

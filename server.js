@@ -1,12 +1,31 @@
 const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let recipes = [];
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+// multerの設定
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/') // uploadsフォルダに保存
+    },
+    filename: function (req, file, cb) {
+        // 名前が被らないように
+        cb(null, Date.now() + '-' + file.originalname)
+    }
+});
+const upload = multer({ storage: storage });
 
+// ブラウザから「/uploads/画像名」で直接アクセスできるようにする設定
+app.use('/uploads', express.static('uploads'));
+
+let recipes = [];
 // --- API Endpoints ---
 
 // Get all recipes (with optional search filters)
@@ -24,23 +43,23 @@ app.get('/api/recipes', (req, res) => {
     res.json(results);
 });
 
-// [NEW] Get a list of unique dish names for the search suggestions
 app.get('/api/dish-names', (req, res) => {
-    // Extract dish names and remove duplicates using Set
     const dishNames = [...new Set(recipes.map(r => r.dishName))];
     res.json(dishNames);
 });
 
-// Post a new recipe
-app.post('/api/recipes', (req, res) => {
-    const { author, country, dishName, photoUrl, method, ingredients, substitutes } = req.body;
+app.post('/api/recipes', upload.single('photo'), (req, res) => {
+    const { author, country, dishName, method, ingredients, substitutes } = req.body;
+    
+    // 画像がアップロードされていればそのパスを保存、なければ空文字
+    const photoUrl = req.file ? '/uploads/' + req.file.filename : ''; 
     
     const newRecipe = {
         id: Date.now(),
         author,
         country,
         dishName,
-        photoUrl,
+        photoUrl, // 画像のパスを保存
         method,
         ingredients,
         substitutes,
@@ -51,6 +70,7 @@ app.post('/api/recipes', (req, res) => {
     recipes.push(newRecipe);
     res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
 });
+
 
 // Like a recipe
 app.post('/api/recipes/:id/like', (req, res) => {
@@ -64,6 +84,7 @@ app.post('/api/recipes/:id/like', (req, res) => {
         res.status(404).json({ message: 'Recipe not found' });
     }
 });
+
 
 // Add a review
 app.post('/api/recipes/:id/review', (req, res) => {
