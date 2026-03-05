@@ -1,20 +1,196 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Japanese Recipes for Expats</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        .menu-btn { display: inline-block; margin: 20px; padding: 15px 30px; font-size: 18px; text-decoration: none; color: white; background-color: #007bff; border-radius: 5px; }
+        body {
+            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #fff4e6, #ffe8cc);
+            color: #5a3e2b;
+            text-align: center;
+        }
+
+        header {
+            background-image: url('images/Baneer-background.png');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 20px;
+            border-bottom: 5px solid #d83434;
+        }
+
+        header a.logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        header a.logo:hover {
+            transform: scale(1.05);
+        }
+
+        header a.logo img {
+            height: 150px;
+            width: auto;
+            display: block;
+        }
+
+        header h1 {
+            margin-top: 20px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: 'Sawarabi Mincho', serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            color: #fff;
+        }
+
+        main {
+            padding: 50px 20px;
+            min-height: 400px;
+        }
+
+        main p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        /* --- 共通ボタンのスタイル修正 --- */
+        .menu-btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 20px 0; /* 上下パディングのみ指定 */
+            width: 280px;    /* ボタンの横幅を固定して統一 */
+            font-size: 20px; /* フォントサイズを統一 */
+            text-decoration: none;
+            color: white;
+            background-color: #ff7f50;
+            border-radius: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.2s;
+            box-sizing: border-box; /* パディングを含めて幅を計算 */
+            font-weight: bold;
+        }
+
+        .menu-btn:hover {
+            background-color: #e67348;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ラッパーの共通スタイル */
+        .browse-wrapper, .post-wrapper {
+            position: relative;
+            display: inline-block;
+            text-align: center;
+            margin-top: 140px; /* アイコンが重なるためのスペースを確保 */
+            margin-bottom: 20px;
+            margin-left: 15px;
+            margin-right: 15px;
+            vertical-align: bottom;
+        }
+
+        /* アイコンの共通設定 */
+        .browse-wrapper::before, .post-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -150px; /* ボタンの少し上に配置 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 220px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 各アイコン画像の設定 */
+        .browse-wrapper::before {
+            background-image: url('images/Search-button.png');
+        }
+
+        .post-wrapper::before {
+            background-image: url('images/Post-button.png');
+        }
+
+        footer {
+            background-color: #5a3e2b;
+            color: white;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 650px) {
+            header a.logo {
+                width: 150px;
+                height: 150px;
+            }
+            header a.logo img {
+                height: 110px;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            .browse-wrapper, .post-wrapper {
+                display: block;
+                margin-top: 150px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .menu-btn {
+                width: 90%; /* スマホ時は画面幅に合わせる */
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to Japanese Recipes for Expats</h1>
-    <p>Share and discover how to make authentic Japanese food using local substitute ingredients!</p>
-    
-    <div>
-        <a href="/browse" class="menu-btn">Browse Recipes</a>
-        <a href="/post" class="menu-btn">Post a New Recipe</a>
-    </div>
+    <header>
+        <a href="/index" class="logo">
+            <img src="images/Wa-lterna-logo.png" alt="Japanese Recipes Logo">
+        </a>
+        <h1>Japanese Recipes for Expats</h1>
+    </header>
+
+    <main>
+        <p>Share and discover how to make authentic Japanese food using local substitute ingredients!</p>
+        <div>
+            <div class="browse-wrapper">
+                <a href="/browse" class="menu-btn">Browse Recipes</a>
+            </div>
+            
+            <div class="post-wrapper">
+                <a href="/post" class="menu-btn">Post a New Recipe</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Japanese Recipes for Expats. All rights reserved.</p>
+    </footer>
 </body>
 </html>
