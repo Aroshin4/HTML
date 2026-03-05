@@ -25,6 +25,8 @@ const upload = multer({ storage: storage });
 // ブラウザから「/uploads/画像名」で直接アクセスできるようにする設定
 app.use('/uploads', express.static('uploads'));
 
+app.use('/images', express.static('images'));
+
 let recipes = [];
 // --- API Endpoints ---
 
