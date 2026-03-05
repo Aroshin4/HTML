@@ -24,7 +24,6 @@ const upload = multer({ storage: storage });
 
 // ブラウザから「/uploads/画像名」で直接アクセスできるようにする設定
 app.use('/uploads', express.static('uploads'));
-
 app.use('/images', express.static('images'));
 
 let recipes = [];
@@ -43,6 +42,12 @@ app.get('/api/recipes', (req, res) => {
     }
 
     res.json(results);
+});
+
+// [追加] 国の一覧を取得するAPI
+app.get('/api/countries', (req, res) => {
+    const countries = [...new Set(recipes.map(r => r.country))];
+    res.json(countries);
 });
 
 app.get('/api/dish-names', (req, res) => {
@@ -73,7 +78,6 @@ app.post('/api/recipes', upload.single('photo'), (req, res) => {
     res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
 });
 
-
 // Like a recipe
 app.post('/api/recipes/:id/like', (req, res) => {
     const recipeId = parseInt(req.params.id);
@@ -86,7 +90,6 @@ app.post('/api/recipes/:id/like', (req, res) => {
         res.status(404).json({ message: 'Recipe not found' });
     }
 });
-
 
 // Add a review
 app.post('/api/recipes/:id/review', (req, res) => {
@@ -107,6 +110,7 @@ app.post('/api/recipes/:id/review', (req, res) => {
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
 app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
+app.get('/recipe/:id', (req, res) => res.sendFile(__dirname + '/recipe.html'));
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
@@ -122,8 +126,4 @@ app.get('/api/recipes/:id', (req, res) => {
     } else {
         res.status(404).json({ message: 'Recipe not found' });
     }
-});
-
-app.get('/recipe/:id', (req, res) => {
-    res.sendFile(__dirname + '/recipe.html');
 });

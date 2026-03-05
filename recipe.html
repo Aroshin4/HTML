@@ -1,42 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Recipe Detail</title>
+    <title>Recipe Details</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
-        img { max-width: 100%; }
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+        .thumbnail { width: 100%; max-height: 400px; object-fit: cover; border-radius: 5px; margin-bottom: 20px; }
+        .review-box { background-color: #f9f9f9; padding: 20px; margin-top: 30px; border-radius: 5px; }
+        .review-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+        .review-item:last-child { border-bottom: none; }
+        pre { font-family: inherit; white-space: pre-wrap; margin-top: 5px; background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; }
     </style>
 </head>
 <body>
     <a href="/browse">← Back to Browse</a>
-    <div id="recipe-detail"></div>
+    <div id="recipe-content">
+        <p>Loading...</p>
+    </div>
 
     <script>
-        // URLからIDを取得
-        const id = window.location.pathname.split('/').pop();
+        // URLからレシピのIDを取得する (例: /recipe/1678888888 -> 1678888888)
+        const recipeId = window.location.pathname.split('/').pop();
 
-        async function fetchRecipe() {
-            const response = await fetch(`/api/recipes/${id}`);
+        window.onload = () => {
+            fetchRecipeDetails();
+        };
+
+        async function fetchRecipeDetails() {
+            const response = await fetch(`/api/recipes/${recipeId}`);
+            if (!response.ok) {
+                document.getElementById('recipe-content').innerHTML = '<p>Recipe not found.</p>';
+                return;
+            }
             const recipe = await response.json();
+            const contentDiv = document.getElementById('recipe-content');
+            
+            // 画像の表示処理
+            const imageHtml = recipe.photoUrl 
+                ? `<img src="${recipe.photoUrl}" alt="${recipe.dishName}" class="thumbnail">`
+                : `<div style="width: 100%; height: 200px; background-color: #e9ecef; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #6c757d; margin-bottom: 20px;">No Image</div>`;
 
-            const container = document.getElementById('recipe-detail');
+            // いいねボタンの表示処理 (LocalStorageをチェック)
+            const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
+            const isLiked = likedRecipes.includes(recipe.id);
+            const likeBtnHtml = isLiked 
+                ? `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`
+                : `<button id="like-btn" onclick="likeRecipe(${recipe.id})" style="margin-left: 10px; padding: 5px; cursor: pointer; border-radius: 4px;">Like!</button>`;
 
-            container.innerHTML = `
-                <h2>${recipe.dishName} (${recipe.country})</h2>
-                ${recipe.photoUrl ? `<img src="${recipe.photoUrl}">` : ''}
-                <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
-                <p><strong>Substitutes:</strong> ${recipe.substitutes}</p>
-                <p><strong>Method:</strong> ${recipe.method}</p>
-                <p>❤️ Likes: ${recipe.likes}</p>
-                <h3>Reviews</h3>
-                ${recipe.reviews.map(r => `
-                    <p>★${r.rating} - ${r.reviewerName}: ${r.comment}</p>
-                `).join('')}
+            // レビューの表示処理
+            let reviewsHtml = '';
+            if (recipe.reviews.length === 0) {
+                reviewsHtml = '<p>No reviews yet. Be the first to review!</p>';
+            } else {
+                reviewsHtml = recipe.reviews.map(r => `
+                    <div class="review-item">
+                        <strong>★${r.rating}</strong> - <span>${r.reviewerName}</span>
+                        <p style="margin: 5px 0 0 0;">${r.comment}</p>
+                    </div>
+                `).join('');
+            }
+
+            // 画面の構築
+            contentDiv.innerHTML = `
+                <h2>${recipe.dishName} <span style="font-size: 0.7em; color: #666;">(${recipe.country})</span></h2>
+                <p><strong>Posted by:</strong> ${recipe.author || 'Anonymous'}</p>
+                ${imageHtml}
+                
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <h3>Ingredients</h3>
+                        <pre>${recipe.ingredients}</pre>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3>Substitutes</h3>
+                        <pre>${recipe.substitutes}</pre>
+                    </div>
+                </div>
+                
+                <h3>Method</h3>
+                <pre>${recipe.method}</pre>
+                
+                <p style="font-size: 1.2em; margin-top: 20px;">
+                    ❤️ Likes: <span id="likes-count">${recipe.likes}</span> 
+                    ${likeBtnHtml}
+                </p>
+
+                <div class="review-box">
+                    <h3>Reviews</h3>
+                    <div id="reviews-list">
+                        ${reviewsHtml}
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;">Add a Review</h4>
+                    <form onsubmit="submitReview(event)">
+                        <input type="text" id="reviewerName" placeholder="Your Name" required style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
+                        <input type="number" id="rating" placeholder="Rating (1-5)" min="1" max="5" required style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
+                        <textarea id="comment" placeholder="Your Comment" required style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; height: 80px;"></textarea>
+                        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit Review</button>
+                    </form>
+                </div>
             `;
         }
 
-        fetchRecipe();
+        async function likeRecipe(id) {
+            const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('likes-count').innerText = data.likes;
+                
+                const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
+                if (!likedRecipes.includes(id)) {
+                    likedRecipes.push(id);
+                    localStorage.setItem('likedRecipes', JSON.stringify(likedRecipes));
+                }
+                
+                const btn = document.getElementById('like-btn');
+                if (btn) {
+                    btn.outerHTML = `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`;
+                }
+            }
+        }
+
+        async function submitReview(event) {
+            event.preventDefault();
+            const reviewData = {
+                reviewerName: document.getElementById('reviewerName').value,
+                rating: parseInt(document.getElementById('rating').value),
+                comment: document.getElementById('comment').value
+            };
+
+            const response = await fetch(`/api/recipes/${recipeId}/review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            });
+
+            if (response.ok) {
+                alert('Review added successfully!');
+                fetchRecipeDetails(); // 画面を更新して新しいレビューを表示
+            }
+        }
     </script>
 </body>
 </html>
