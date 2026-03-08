@@ -27,9 +27,9 @@ app.use('/uploads', express.static('uploads'));
 app.use('/images', express.static('images'));
 
 let recipes = [];
-// --- API Endpoints ---
+// --- API エンドポイント ---
 
-// Get all recipes (with optional search filters)
+// 全てのレシピを取得するAPI)
 app.get('/api/recipes', (req, res) => {
     const { country, dishName } = req.query;
     let results = recipes;
@@ -77,8 +77,7 @@ app.post('/api/recipes', upload.single('photo'), (req, res) => {
     recipes.push(newRecipe);
     res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
 });
-
-// Like a recipe
+// レシピのlikesを増やすAPI
 app.post('/api/recipes/:id/like', (req, res) => {
     const recipeId = parseInt(req.params.id);
     const recipe = recipes.find(r => r.id === recipeId);
@@ -91,7 +90,7 @@ app.post('/api/recipes/:id/like', (req, res) => {
     }
 });
 
-// Add a review
+// レビューを追加するAPI
 app.post('/api/recipes/:id/review', (req, res) => {
     const recipeId = parseInt(req.params.id);
     const { reviewerName, comment, rating } = req.body;
@@ -106,7 +105,7 @@ app.post('/api/recipes/:id/review', (req, res) => {
     }
 });
 
-// --- Routing for HTML files ---
+// --- HTMLファイル用のルーティング ---
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
 app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
@@ -116,7 +115,7 @@ app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
-// Get single recipe by ID
+// 特定のレシピを取得するAPI
 app.get('/api/recipes/:id', (req, res) => {
     const recipeId = parseInt(req.params.id);
     const recipe = recipes.find(r => r.id === recipeId);
