@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browse Recipes</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+        .recipe-card { border: 1px solid #007bff; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        .review-box { background-color: #f9f9f9; padding: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <a href="/">← Back to Home</a>
+    <h2>Browse & Search Recipes</h2>
+    
+    <form id="searchForm" style="margin-bottom: 20px;">
+        <input type="text" id="searchCountry" placeholder="Filter by Country" style="padding: 5px;">
+        
+        <input type="text" id="searchDishName" placeholder="Filter by Dish Name" list="dish-list" style="padding: 5px;">
+        <datalist id="dish-list"></datalist>
+        
+        <button type="submit" style="padding: 5px 15px;">Search</button>
+    </form>
+    
+    <div id="results"></div>
+
+    <script>
+        window.onload = () => {
+            fetchAndDisplayRecipes();
+            populateDishList(); // ページ読み込み時にサジェスト一覧を取得
+        };
+
+        // --- Fetch unique dish names for the datalist ---
+        async function populateDishList() {
+            const response = await fetch('/api/dish-names');
+            const dishNames = await response.json();
+            const dataList = document.getElementById('dish-list');
+            
+            dataList.innerHTML = ''; // Clear existing options
+            dishNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                dataList.appendChild(option);
+            });
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const country = document.getElementById('searchCountry').value;
+            const dishName = document.getElementById('searchDishName').value;
+            fetchAndDisplayRecipes(country, dishName);
+        });
+
+        async function fetchAndDisplayRecipes(country = '', dishName = '') {
+            let url = '/api/recipes?';
+            if (country) url += `country=${encodeURIComponent(country)}&`;
+            if (dishName) url += `dishName=${encodeURIComponent(dishName)}`;
+
+            const response = await fetch(url);
+            const recipes = await response.json();
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = ''; 
+
+            if (recipes.length === 0) {
+                resultsDiv.innerHTML = '<p>No recipes found.</p>';
+                return;
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.innerHTML = `
+                    <h3>${recipe.dishName} (${recipe.country})</h3>
+                    <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
+                    <p><strong>Substitutes:</strong> ${recipe.substitutes}</p>
+                    <p><strong>Method:</strong> ${recipe.method}</p>
+                    <p>❤️ Likes: <span id="likes-${recipe.id}">${recipe.likes}</span> 
+                       <button onclick="likeRecipe(${recipe.id})">Like!</button>
+                    </p>
+                    <div class="review-box">
+                        <h4>Reviews</h4>
+                        <div id="reviews-list-${recipe.id}">
+                            ${recipe.reviews.map(r => `<p>★${r.rating} - ${r.reviewerName}: ${r.comment}</p>`).join('')}
+                        </div>
+                        <form onsubmit="submitReview(event, ${recipe.id})">
+                            <input type="text" id="reviewerName-${recipe.id}" placeholder="Name" required style="width: 30%;">
+                            <input type="number" id="rating-${recipe.id}" placeholder="Rating(1-5)" min="1" max="5" required style="width: 20%;">
+                            <input type="text" id="comment-${recipe.id}" placeholder="Comment" required style="width: 40%;">
+                            <button type="submit">Submit</button>
+                        </form>
+                    </div>
+                `;
+                resultsDiv.appendChild(card);
+            });
+        }
+
+        async function likeRecipe(id) {
+            const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById(`likes-${id}`).innerText = data.likes;
+            }
+        }
+
+        async function submitReview(event, id) {
+            event.preventDefault();
+            const reviewData = {
+                reviewerName: document.getElementById(`reviewerName-${id}`).value,
+                rating: parseInt(document.getElementById(`rating-${id}`).value),
+                comment: document.getElementById(`comment-${id}`).value
+            };
+
+            const response = await fetch(`/api/recipes/${id}/review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            });
+
+            if (response.ok) {
+                alert('Review added successfully!');
+                const country = document.getElementById('searchCountry').value;
+                const dishName = document.getElementById('searchDishName').value;
+                fetchAndDisplayRecipes(country, dishName); 
+            }
+        }
+    </script>
+</body>
+</html>
