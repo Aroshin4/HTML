@@ -1,8 +1,9 @@
-# docker/docker-compose.yml（例）
+# mizuki_test/docker/docker-compose.yml
 services:
   db:
     image: mysql:8.0
     container_name: jpfood_db
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_DATABASE: jpfood
@@ -29,8 +30,7 @@ services:
     container_name: jpfood_app
     working_dir: /usr/src/app
     volumes:
-      - ../app:/usr/src/app
-      - ..public:/usr/src/app/public
+      - ../app:/usr/src/app         # ← app を丸ごとマウント（中に public も含む）
     command: bash -lc "npm install && npm run start"
     environment:
       DB_HOST: db
