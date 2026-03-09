@@ -7,6 +7,7 @@ const port = 3000;
 const mysql = require("mysql2");
 
 app.use(express.urlencoded({ extended: true })); // フォーム受け取り
+app.use(express.static(path.join(__dirname, "public")));
 
 // MySQL 接続設定
 const db = mysql.createConnection({

@@ -1,0 +1,7 @@
+1. docker(クジラアイコン)を起動
+2. http://localhost:8080
+3. System : MySQL
+   Server : db
+   User   : jpuser
+   Password : jppw
+   Database : jpfood
