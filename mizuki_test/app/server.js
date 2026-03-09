@@ -1,112 +1,91 @@
-const express = require('express');
+// app/server.js
+const express = require("express");
+const mysql = require("mysql2/promise");
+const path = require("path");
+
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
-//////MySQL実装のためのコード
-// server.js
-const mysql = require("mysql2");
-
-app.use(express.urlencoded({ extended: true })); // フォーム受け取り
-app.use(express.static(path.join(__dirname, "public")));
-
-// MySQL 接続設定
-const db = mysql.createConnection({
-  host: "db",      // Docker のサービス名！
-  user: "jpuser",
-  password: "jppw",
-  database: "jpfood"
-});
-
-// DB接続確認
-db.connect((err) => {
-  if (err) throw err;
-  console.log("MySQL Connected!");
-});
-
-///////////////////////////////////////
-
+// 受信設定
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let recipes = [];
+// ★ 静的配信：app/public を http://localhost:3000 直下で配信
+app.use(express.static(path.join(__dirname, "public")));
 
-// --- API Endpoints ---
-
-// Get all recipes (with optional search filters)
-app.get('/api/recipes', (req, res) => {
-    const { country, dishName } = req.query;
-    let results = recipes;
-
-    if (country) {
-        results = results.filter(r => r.country.toLowerCase() === country.toLowerCase());
-    }
-    if (dishName) {
-        results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
-    }
-
-    res.json(results);
+// DB接続（Dockerのdbサービスへ）
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || "db",
+  user: process.env.DB_USER || "jpuser",
+  password: process.env.DB_PASSWORD || "jppw",
+  database: process.env.DB_NAME || "jpfood",
+  waitForConnections: true,
+  connectionLimit: 10,
 });
 
-// [NEW] Get a list of unique dish names for the search suggestions
-app.get('/api/dish-names', (req, res) => {
-    // Extract dish names and remove duplicates using Set
-    const dishNames = [...new Set(recipes.map(r => r.dishName))];
-    res.json(dishNames);
+// ヘルスチェック
+app.get("/health", async (_req, res) => {
+  try {
+    const conn = await pool.getConnection();
+    await conn.query("SELECT 1");
+    conn.release();
+    res.send("OK");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("NG");
+  }
 });
 
-// Post a new recipe
-app.post('/api/recipes', (req, res) => {
+// ▼ 投稿API：post.html の fetch('/api/recipes') から呼ばれる
+app.post("/api/recipes", async (req, res) => {
+  try {
     const { country, dishName, photoUrl, method, ingredients, substitutes } = req.body;
-    
-    const newRecipe = {
-        id: Date.now(),
-        country,
-        dishName,
-        photoUrl,
-        method,
-        ingredients,
-        substitutes,
-        likes: 0,
-        reviews: []
-    };
-    
-    recipes.push(newRecipe);
-    res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
-});
 
-// Like a recipe
-app.post('/api/recipes/:id/like', (req, res) => {
-    const recipeId = parseInt(req.params.id);
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        recipe.likes += 1;
-        res.json({ message: 'Liked!', likes: recipe.likes });
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
+    if (!country || !dishName || !method || !ingredients || !substitutes) {
+      return res.status(400).json({ message: "必須項目が不足しています" });
     }
+
+    const sql = `
+      INSERT INTO recipe (
+        country_text, dish_name, photo_url, method_text, ingredients_text, substitutes_text
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    const params = [country, dishName, photoUrl || null, method, ingredients, substitutes];
+
+    const [result] = await pool.query(sql, params);
+    res.status(201).json({ message: "OK", id: result.insertId });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "サーバーエラー" });
+  }
 });
 
-// Add a review
-app.post('/api/recipes/:id/review', (req, res) => {
-    const recipeId = parseInt(req.params.id);
-    const { reviewerName, comment, rating } = req.body;
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        const newReview = { reviewerName, comment, rating, date: new Date() };
-        recipe.reviews.push(newReview);
-        res.json({ message: 'Review added!', reviews: recipe.reviews });
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
-    }
+// （任意）一覧ページをサーバ側で簡易生成
+app.get("/browse", async (_req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, country_text, dish_name, photo_url FROM recipe ORDER BY id DESC LIMIT 50"
+    );
+    const items = rows
+      .map(
+        (r) => `<li><strong>${escapeHtml(r.dish_name)}</strong> (${escapeHtml(r.country_text)})</li>`
+      )
+      .join("");
+    res.send(`<!doctype html><meta charset="utf-8"><title>Recipes</title>
+<style>body{font-family:sans-serif;padding:20px;max-width:800px;margin:auto}</style>
+/post.html＋ 新規投稿</a>
+<h2>投稿済みレシピ</h2>
+<ul>${items || "<li>まだありません</li>"}</ul>`);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("サーバーエラー");
+  }
 });
 
-// --- Routing for HTML files ---
-app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
-app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
-app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
+function escapeHtml(str = "") {
+  return String(str).replace(/[&<>"']/g, (s) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[s]));
+}
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
