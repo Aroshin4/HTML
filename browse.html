@@ -29,6 +29,7 @@
     </form>
     
     <div id="results"></div>
+    <div id="pagination" style="margin-top: 20px; text-align: center; margin-bottom: 40px;"></div>
 
     <script>
         window.onload = () => {
@@ -58,30 +59,39 @@
             });
         }
 
+        // --- ここから下が大きく変更・追加された部分です ---
+        
+        // 現在のページを記憶しておく変数
+        let currentPage = 1;
+
         document.getElementById('searchForm').addEventListener('submit', (e) => {
             e.preventDefault();
+            // 検索ボタンを押した時は必ず1ページ目に戻す
+            currentPage = 1;
             const country = document.getElementById('searchCountry').value;
             const dishName = document.getElementById('searchDishName').value;
-            fetchAndDisplayRecipes(country, dishName);
+            fetchAndDisplayRecipes(country, dishName, currentPage);
         });
 
-        async function fetchAndDisplayRecipes(country = '', dishName = '') {
-            let url = '/api/recipes?';
+        // page引数 (デフォルトは1) を追加
+        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1) {
+            let url = `/api/recipes?page=${page}&`;
             if (country) url += `country=${encodeURIComponent(country)}&`;
             if (dishName) url += `dishName=${encodeURIComponent(dishName)}`;
 
             const response = await fetch(url);
-            const recipes = await response.json();
+            const data = await response.json(); 
+            const recipes = data.recipes; // サーバーから返ってくるデータ構造が変わったため .recipes を取り出す
             
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = ''; 
 
             if (recipes.length === 0) {
                 resultsDiv.innerHTML = '<p>No recipes found.</p>';
+                document.getElementById('pagination').innerHTML = ''; // レシピがなければページボタンも消す
                 return;
             }
 
-            // ブラウザに保存されている「いいねしたレシピID」のリストを取得
             const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
 
             recipes.forEach(recipe => {
@@ -92,7 +102,6 @@
                     ? `<a href="/recipe/${recipe.id}"><img src="${recipe.photoUrl}" alt="${recipe.dishName}" class="thumbnail"></a>`
                     : `<a href="/recipe/${recipe.id}" class="no-image">No Image<br>(Click to view details)</a>`;
 
-                // 過去にいいねを押しているかでボタンのHTMLを切り替える
                 const isLiked = likedRecipes.includes(recipe.id);
                 const likeBtnHtml = isLiked 
                     ? `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`
@@ -113,22 +122,67 @@
                 `;
                 resultsDiv.appendChild(card);
             });
+
+            // ページ送りボタンを描画する処理を呼び出す
+            renderPagination(data.totalPages, data.currentPage, country, dishName);
         }
 
+        // 新しく追加したページ送りボタンを作る関数
+        function renderPagination(totalPages, currentPage, country, dishName) {
+            const paginationDiv = document.getElementById('pagination');
+            paginationDiv.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // 「前のページへ」ボタン
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = '← Previous';
+                prevBtn.style.padding = '8px 15px';
+                prevBtn.style.marginRight = '10px';
+                prevBtn.style.cursor = 'pointer';
+                prevBtn.onclick = () => {
+                    fetchAndDisplayRecipes(country, dishName, currentPage - 1);
+                    window.scrollTo(0, 0); 
+                };
+                paginationDiv.appendChild(prevBtn);
+            }
+
+            // ページ番号のテキスト
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` Page ${currentPage} of ${totalPages} `;
+            pageInfo.style.margin = '0 15px';
+            pageInfo.style.fontWeight = 'bold';
+            paginationDiv.appendChild(pageInfo);
+
+            // 「次のページへ」ボタン
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Next →';
+                nextBtn.style.padding = '8px 15px';
+                nextBtn.style.marginLeft = '10px';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.onclick = () => {
+                    fetchAndDisplayRecipes(country, dishName, currentPage + 1);
+                    window.scrollTo(0, 0); 
+                };
+                paginationDiv.appendChild(nextBtn);
+            }
+        }
+
+        // --- いいね機能 (変更なし) ---
         async function likeRecipe(id) {
             const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
             if (response.ok) {
                 const data = await response.json();
                 document.getElementById(`likes-${id}`).innerText = data.likes;
                 
-                // ブラウザのLocalStorageに「いいねしたID」を保存する
                 const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
                 if (!likedRecipes.includes(id)) {
                     likedRecipes.push(id);
                     localStorage.setItem('likedRecipes', JSON.stringify(likedRecipes));
                 }
                 
-                // クリックされたボタンを「Liked❤️」に変えて無効化する
                 const btn = document.getElementById(`like-btn-${id}`);
                 if (btn) {
                     btn.outerHTML = `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`;
