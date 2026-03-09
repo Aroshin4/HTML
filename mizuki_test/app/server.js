@@ -2,6 +2,9 @@
 const express = require("express");
 const mysql = require("mysql2/promise");
 const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,8 +13,28 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) 
+    fs.mkdirSync(uploadsDir, { recursive: true });
+
+
 // ★ 静的配信：app/public を http://localhost:3000 直下で配信
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(uploadsDir));
+
+
+// ★ multer 設定
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const ts = Date.now();
+    const safe = file.originalname.replace(/[^\w.\-]/g, "_");
+    cb(null, `${ts}_${safe}`);
+  },
+});
+const upload = multer({ storage });
+
 
 // DB接続（Dockerのdbサービスへ）
 const pool = mysql.createPool({
