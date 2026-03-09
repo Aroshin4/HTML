@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Post a Recipe</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        input, textarea { display: block; width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; }
+        button { padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <a href="/">← Back to Home</a>
+    <h2>Post a New Recipe</h2>
+    <form id="postForm">
+        <input type="text" id="country" placeholder="Country (e.g., France)" required>
+        <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
+        <input type="text" id="photoUrl" placeholder="Photo URL (e.g., https://example.com/photo.jpg)">
+        <textarea id="method" placeholder="Cooking Method" rows="4" required></textarea>
+        <textarea id="ingredients" placeholder="Original Ingredients" rows="3" required></textarea>
+        <textarea id="substitutes" placeholder="Substitutes (e.g., Use local mushroom instead of Shiitake)" rows="3" required></textarea>
+        <button type="submit">Submit Recipe</button>
+    </form>
+
+    <script>
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const recipeData = {
+                country: document.getElementById('country').value,
+                dishName: document.getElementById('dishName').value,
+                photoUrl: document.getElementById('photoUrl').value,
+                method: document.getElementById('method').value,
+                ingredients: document.getElementById('ingredients').value,
+                substitutes: document.getElementById('substitutes').value
+            };
+
+            const response = await fetch('/api/recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(recipeData)
+            });
+
+            if (response.ok) {
+                alert('Recipe posted successfully! Redirecting to browse page.');
+                window.location.href = '/browse';
+            }
+        });
+    </script>
+</body>
+</html>
