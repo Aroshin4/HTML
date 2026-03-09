@@ -31,9 +31,14 @@ let recipes = [];
 
 // 全てのレシピを取得するAPI)
 app.get('/api/recipes', (req, res) => {
+    // ページ番号と1ページあたりの件数（デフォルトは1ページ目、5件）を受け取る
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
     const { country, dishName } = req.query;
+    
     let results = recipes;
 
+    // 検索フィルター
     if (country) {
         results = results.filter(r => r.country.toLowerCase() === country.toLowerCase());
     }
@@ -41,10 +46,20 @@ app.get('/api/recipes', (req, res) => {
         results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
     }
 
-    res.json(results);
+    // ページネーション用の計算
+    const startIndex = (page - 1) * limit; // 切り取る開始位置
+    const endIndex = page * limit;         // 切り取る終了位置
+    const paginatedResults = results.slice(startIndex, endIndex);
+
+    res.json({
+        recipes: paginatedResults,
+        currentPage: page,
+        totalPages: Math.ceil(results.length / limit),
+        totalRecipes: results.length
+    });
 });
 
-// [追加] 国の一覧を取得するAPI
+// 国の一覧を取得するAPI
 app.get('/api/countries', (req, res) => {
     const countries = [...new Set(recipes.map(r => r.country))];
     res.json(countries);
