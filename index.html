@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japanese Recipes for Expats</title>
+    <title>Wa-lterna-Home</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
         body {
@@ -166,11 +166,38 @@
                 width: 90%; /* スマホ時は画面幅に合わせる */
             }
         }
+
+        /* 左側バナーのスタイル */
+        .side-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 120px; /* 幅を拡大 */
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column; /* 縦方向に配置 */
+            align-items: center;
+            justify-content: flex-start; /* 上部に寄せる */
+            padding-top: 20px; /* 上部に余白を追加 */
+            z-index: 1000;
+        }
+
+        .side-banner a {
+            display: block;
+            width: 150px; /* ロゴの幅を拡大 */
+            height: 150px; /* ロゴの高さを拡大 */
+            background: url('images/Wa-lterna-logo.png') no-repeat center center;
+            background-size: contain;
+            text-decoration: none;
+            margin-bottom: 20px; /* ロゴの下に余白を追加 */
+        }
     </style>
 </head>
 <body>
     <header>
-        <a href="index.html" class="logo">
+        <a href="/index" class="logo">
             <img src="images/Wa-lterna-logo.png" alt="Japanese Recipes Logo">
         </a>
         <h1>Japanese Recipes for Expats</h1>
@@ -180,11 +207,11 @@
         <p>Share and discover how to make authentic Japanese food using local substitute ingredients!</p>
         <div>
             <div class="browse-wrapper">
-                <a href="browse.html" class="menu-btn">Browse Recipes</a>
+                <a href="/browse" class="menu-btn">Browse Recipes</a>
             </div>
             
             <div class="post-wrapper">
-                <a href="post.html" class="menu-btn">Post a New Recipe</a>
+                <a href="/post" class="menu-btn">Post a New Recipe</a>
             </div>
         </div>
     </main>
@@ -192,5 +219,9 @@
     <footer>
         <p>&copy; 2026 Japanese Recipes for Expats. All rights reserved.</p>
     </footer>
+
+    <div class="side-banner">
+        <a href="/index" aria-label="ホームに戻る"></a>
+    </div>
 </body>
 </html>
