@@ -34,7 +34,8 @@ app.get('/api/recipes', (req, res) => {
     // ページ番号と1ページあたりの件数（デフォルトは1ページ目、5件）を受け取る
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
-    const { country, dishName } = req.query;
+
+    const { country, dishName, sort } = req.query; //←sortの追加
     
     let results = recipes;
 
@@ -45,6 +46,16 @@ app.get('/api/recipes', (req, res) => {
     if (dishName) {
         results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
     }
+
+    // --- ここからソートを追加 ---
+    if (sort === "likes") {
+        results = [...results].sort((a, b) => b.likes - a.likes);
+    } else if (sort === "oldest") {
+        results = [...results].sort((a, b) => a.id - b.id);
+    } else if (sort === "newest") {
+        results = [...results].sort((a, b) => b.id - a.id);
+    }
+    // --- ここまで追加 ---
 
     // ページネーション用の計算
     const startIndex = (page - 1) * limit; // 切り取る開始位置
