@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browse Recipes</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+        .recipe-card { border: 1px solid #007bff; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        
+        .thumbnail { width: 100%; height: 250px; object-fit: cover; border-radius: 5px; transition: opacity 0.3s; }
+        .thumbnail:hover { opacity: 0.8; }
+        .no-image { width: 100%; height: 250px; background-color: #e9ecef; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-weight: bold; text-decoration: none; transition: opacity 0.3s; text-align: center;}
+        .no-image:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <a href="/">← Back to Home</a>
+    <h2>Browse & Search Recipes</h2>
+    
+    <form id="searchForm" style="margin-bottom: 20px;">
+        <select id="searchCountry" style="padding: 5px; margin-right: 10px;">
+            <option value="">-- All Countries --</option>
+        </select>
+        
+        <input type="text" id="searchDishName" placeholder="Filter by Dish Name" list="dish-list" style="padding: 5px;">
+        <datalist id="dish-list"></datalist>
+
+        <select id="sortOrder" style="padding: 5px; margin-left: 10px;">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="likes">Most Liked</option>
+        </select>
+        
+        <button type="submit" style="padding: 5px 15px;">Search</button>
+    </form>
+    
+    <div id="results"></div>
+    <div id="pagination" style="margin-top: 20px; text-align: center; margin-bottom: 40px;"></div>
+
+    <script>
+        window.onload = () => {
+            fetchAndDisplayRecipes();
+            populateFilters(); 
+        };
+
+        async function populateFilters() {
+            const countryRes = await fetch('/api/countries');
+            const countries = await countryRes.json();
+            const countrySelect = document.getElementById('searchCountry');
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+
+            const dishRes = await fetch('/api/dish-names');
+            const dishNames = await dishRes.json();
+            const dataList = document.getElementById('dish-list');
+            dataList.innerHTML = ''; 
+            dishNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                dataList.appendChild(option);
+            });
+        }
+
+        // --- ここから下が大きく変更・追加された部分です ---
+        
+        // 現在のページを記憶しておく変数
+        let currentPage = 1;
+
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 検索ボタンを押した時は必ず1ページ目に戻す
+            currentPage = 1;
+            const country = document.getElementById('searchCountry').value;
+            const dishName = document.getElementById('searchDishName').value;
+            const sortOrder = document.getElementById('sortOrder').value; // ←追加
+            fetchAndDisplayRecipes(country, dishName, currentPage, sortOrder); // ←sortOrderも引数に追加
+        });
+
+        // page引数 (デフォルトは1) を追加
+        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1, sortOrder = 'newest') { // ←sortOrderも引数に追加
+            let url = `/api/recipes?page=${page}&sort=${sortOrder}&`; // ←sortOrderもクエリパラメータに追加
+            if (country) url += `country=${encodeURIComponent(country)}&`;
+            if (dishName) url += `dishName=${encodeURIComponent(dishName)}`;
+
+            const response = await fetch(url);
+            const data = await response.json(); 
+            const recipes = data.recipes; // サーバーから返ってくるデータ構造が変わったため .recipes を取り出す
+            
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = ''; 
+
+            if (recipes.length === 0) {
+                resultsDiv.innerHTML = '<p>No recipes found.</p>';
+                document.getElementById('pagination').innerHTML = ''; // レシピがなければページボタンも消す
+                return;
+            }
+
+            const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                
+                const thumbnailHtml = recipe.photoUrl 
+                    ? `<a href="/recipe/${recipe.id}"><img src="${recipe.photoUrl}" alt="${recipe.dishName}" class="thumbnail"></a>`
+                    : `<a href="/recipe/${recipe.id}" class="no-image">No Image<br>(Click to view details)</a>`;
+
+                const isLiked = likedRecipes.includes(recipe.id);
+                const likeBtnHtml = isLiked 
+                    ? `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`
+                    : `<button id="like-btn-${recipe.id}" onclick="likeRecipe(${recipe.id})" style="margin-left: 10px; padding: 5px; cursor: pointer; border-radius: 4px;">Like!</button>`;
+
+                card.innerHTML = `
+                    ${thumbnailHtml}
+                    <h3 style="margin-top: 15px;">
+                        <a href="/recipe/${recipe.id}" style="text-decoration: none; color: inherit;">
+                            ${recipe.dishName}
+                        </a>
+                        <span style="font-size: 0.8em; color: #666;">(${recipe.country})</span>
+                    </h3>
+                    
+                    <p>❤️ Likes: <span id="likes-${recipe.id}">${recipe.likes}</span> 
+                       ${likeBtnHtml}
+                    </p>
+                `;
+                resultsDiv.appendChild(card);
+            });
+
+            // ページ送りボタンを描画する処理を呼び出す
+            renderPagination(data.totalPages, data.currentPage, country, dishName, sortOrder); // ←sortOrderも引数に追加
+        }
+
+        // 新しく追加したページ送りボタンを作る関数
+        function renderPagination(totalPages, currentPage, country, dishName, sortOrder) { // ←sortOrderも引数に追加
+            const paginationDiv = document.getElementById('pagination');
+            paginationDiv.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // 「前のページへ」ボタン
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = '← Previous';
+                prevBtn.style.padding = '8px 15px';
+                prevBtn.style.marginRight = '10px';
+                prevBtn.style.cursor = 'pointer';
+                prevBtn.onclick = () => {
+                    fetchAndDisplayRecipes(country, dishName, currentPage - 1, sortOrder); // ←sortOrderも引数に追加
+                    window.scrollTo(0, 0); 
+                };
+                paginationDiv.appendChild(prevBtn);
+            }
+
+            // ページ番号のテキスト
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` Page ${currentPage} of ${totalPages} `;
+            pageInfo.style.margin = '0 15px';
+            pageInfo.style.fontWeight = 'bold';
+            paginationDiv.appendChild(pageInfo);
+
+            // 「次のページへ」ボタン
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Next →';
+                nextBtn.style.padding = '8px 15px';
+                nextBtn.style.marginLeft = '10px';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.onclick = () => {
+                    fetchAndDisplayRecipes(country, dishName, currentPage + 1, sortOrder); // ←sortOrderも引数に追加
+                    window.scrollTo(0, 0); 
+                };
+                paginationDiv.appendChild(nextBtn);
+            }
+        }
+
+        // --- いいね機能 (変更なし) ---
+        async function likeRecipe(id) {
+            const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById(`likes-${id}`).innerText = data.likes;
+                
+                const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
+                if (!likedRecipes.includes(id)) {
+                    likedRecipes.push(id);
+                    localStorage.setItem('likedRecipes', JSON.stringify(likedRecipes));
+                }
+                
+                const btn = document.getElementById(`like-btn-${id}`);
+                if (btn) {
+                    btn.outerHTML = `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
