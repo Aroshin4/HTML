@@ -1,8 +1,21 @@
 const express = require('express');
+const mysql = require('mysql2/promise');  // mysql2を追加
 const multer = require('multer');
 const fs = require('fs');
 const app = express();
 const port = 3000;
+
+// DB接続プールの作成
+const pool = mysql.createPool({
+  //host: 'db',  // Dockerコンテナ名
+  host: process.env.DB_HOST || 'localhost',  // or '127.0.0.1'
+  port: process.env.DB_PORT || 3307,
+  user: 'jpuser',
+  password: 'jppw',
+  database: 'jpfood',
+  waitForConnections: true,
+  connectionLimit: 10,
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,45 +43,61 @@ let recipes = [];
 // --- API エンドポイント ---
 
 // 全てのレシピを取得するAPI)
-app.get('/api/recipes', (req, res) => {
-    // ページ番号と1ページあたりの件数（デフォルトは1ページ目、5件）を受け取る
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+app.get('/api/recipes', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM recipes ORDER BY created_at DESC'
+    );
+    res.json({
+      recipes: rows,
+      currentPage: 1,
+      totalPages: 1,
+      totalRecipes: rows.length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    const { country, dishName, sort } = req.query; //←sortの追加
+//app.get('/api/recipes', (req, res) => {
+    // ページ番号と1ページあたりの件数（デフォルトは1ページ目、5件）を受け取る
+    //const page = parseInt(req.query.page) || 1;
+    //const limit = parseInt(req.query.limit) || 5;
+
+    //const { country, dishName, sort } = req.query; //←sortの追加
     
-    let results = recipes;
+    //let results = recipes;
 
     // 検索フィルター
-    if (country) {
-        results = results.filter(r => r.country.toLowerCase() === country.toLowerCase());
-    }
-    if (dishName) {
-        results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
-    }
+    //if (country) {
+        //results = results.filter(r => r.country.toLowerCase() === country.toLowerCase());
+    //}
+    //if (dishName) {
+        //results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
+    //}
 
     // --- ここからソートを追加 ---
-    if (sort === "likes") {
-        results = [...results].sort((a, b) => b.likes - a.likes);
-    } else if (sort === "oldest") {
-        results = [...results].sort((a, b) => a.id - b.id);
-    } else if (sort === "newest") {
-        results = [...results].sort((a, b) => b.id - a.id);
-    }
+    //if (sort === "likes") {
+        //results = [...results].sort((a, b) => b.likes - a.likes);
+    //} else if (sort === "oldest") {
+        //results = [...results].sort((a, b) => a.id - b.id);
+    //} else if (sort === "newest") {
+        //results = [...results].sort((a, b) => b.id - a.id);
+    //}
     // --- ここまで追加 ---
 
     // ページネーション用の計算
-    const startIndex = (page - 1) * limit; // 切り取る開始位置
-    const endIndex = page * limit;         // 切り取る終了位置
-    const paginatedResults = results.slice(startIndex, endIndex);
+    //const startIndex = (page - 1) * limit; // 切り取る開始位置
+    //const endIndex = page * limit;         // 切り取る終了位置
+    //const paginatedResults = results.slice(startIndex, endIndex);
 
-    res.json({
-        recipes: paginatedResults,
-        currentPage: page,
-        totalPages: Math.ceil(results.length / limit),
-        totalRecipes: results.length
-    });
-});
+    //res.json({
+        //recipes: paginatedResults,
+        //currentPage: page,
+        //totalPages: Math.ceil(results.length / limit),
+        //totalRecipes: results.length
+    //});
+//});
 
 // 国の一覧を取得するAPI
 app.get('/api/countries', (req, res) => {
@@ -81,28 +110,28 @@ app.get('/api/dish-names', (req, res) => {
     res.json(dishNames);
 });
 
-app.post('/api/recipes', upload.single('photo'), (req, res) => {
-    const { author, country, dishName, method, ingredients, substitutes } = req.body;
+//app.post('/api/recipes', upload.single('photo'), (req, res) => {
+    //const { author, country, dishName, method, ingredients, substitutes } = req.body;
     
     // 画像がアップロードされていればそのパスを保存、なければ空文字
-    const photoUrl = req.file ? '/uploads/' + req.file.filename : ''; 
+    //const photoUrl = req.file ? '/uploads/' + req.file.filename : ''; 
     
-    const newRecipe = {
-        id: Date.now(),
-        author,
-        country,
-        dishName,
-        photoUrl, // 画像のパスを保存
-        method,
-        ingredients,
-        substitutes,
-        likes: 0,
-        reviews: []
-    };
+    //const newRecipe = {
+        //id: Date.now(),
+        //author,
+        //country,
+        //dishName,
+        //photoUrl, // 画像のパスを保存
+        //method,
+        //ingredients,
+        //substitutes,
+        //likes: 0,
+        //reviews: []
+    //};
     
-    recipes.push(newRecipe);
-    res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
-});
+    //recipes.push(newRecipe);
+    //res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
+//});
 // レシピのlikesを増やすAPI
 app.post('/api/recipes/:id/like', (req, res) => {
     const recipeId = parseInt(req.params.id);
@@ -114,6 +143,21 @@ app.post('/api/recipes/:id/like', (req, res) => {
     } else {
         res.status(404).json({ message: 'Recipe not found' });
     }
+});
+
+app.post('/api/recipes', upload.single('photo'), async (req, res) => {
+  const { author, country, dishName, method, ingredients, substitutes } =
+    req.body;
+  const photo = req.file ? req.file.filename : null;
+  try {
+    await pool.execute(
+      'INSERT INTO recipes (author, country, dishName, photo, method, ingredients, substitutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [author, country, dishName, photo, method, ingredients, substitutes]
+    );
+    res.status(201).json({ message: 'Recipe posted successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // レビューを追加するAPI
