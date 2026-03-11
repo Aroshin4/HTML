@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- DB接続設定 ---
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "db",
+  host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "jpuser",
   password: process.env.DB_PASSWORD || "jppw",
   database: process.env.DB_NAME || "jpfood",

@@ -24,6 +24,12 @@
         
         <input type="text" id="searchDishName" placeholder="Filter by Dish Name" list="dish-list" style="padding: 5px;">
         <datalist id="dish-list"></datalist>
+
+        <select id="sortOrder" style="padding: 5px; margin-left: 10px;">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="likes">Most Liked</option>
+        </select>
         
         <button type="submit" style="padding: 5px 15px;">Search</button>
     </form>
@@ -70,12 +76,13 @@
             currentPage = 1;
             const country = document.getElementById('searchCountry').value;
             const dishName = document.getElementById('searchDishName').value;
-            fetchAndDisplayRecipes(country, dishName, currentPage);
+            const sortOrder = document.getElementById('sortOrder').value; // ←追加
+            fetchAndDisplayRecipes(country, dishName, currentPage, sortOrder); // ←sortOrderも引数に追加
         });
 
         // page引数 (デフォルトは1) を追加
-        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1) {
-            let url = `/api/recipes?page=${page}&`;
+        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1, sortOrder = 'newest') { // ←sortOrderも引数に追加
+            let url = `/api/recipes?page=${page}&sort=${sortOrder}&`; // ←sortOrderもクエリパラメータに追加
             if (country) url += `country=${encodeURIComponent(country)}&`;
             if (dishName) url += `dishName=${encodeURIComponent(dishName)}`;
 
@@ -83,6 +90,7 @@
             const data = await response.json(); 
             const recipes = data.recipes; // サーバーから返ってくるデータ構造が変わったため .recipes を取り出す
             
+
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = ''; 
 
@@ -124,11 +132,11 @@
             });
 
             // ページ送りボタンを描画する処理を呼び出す
-            renderPagination(data.totalPages, data.currentPage, country, dishName);
+            renderPagination(data.totalPages, data.currentPage, country, dishName, sortOrder); // ←sortOrderも引数に追加
         }
 
         // 新しく追加したページ送りボタンを作る関数
-        function renderPagination(totalPages, currentPage, country, dishName) {
+        function renderPagination(totalPages, currentPage, country, dishName, sortOrder) { // ←sortOrderも引数に追加
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = '';
 
@@ -142,7 +150,7 @@
                 prevBtn.style.marginRight = '10px';
                 prevBtn.style.cursor = 'pointer';
                 prevBtn.onclick = () => {
-                    fetchAndDisplayRecipes(country, dishName, currentPage - 1);
+                    fetchAndDisplayRecipes(country, dishName, currentPage - 1, sortOrder); // ←sortOrderも引数に追加
                     window.scrollTo(0, 0); 
                 };
                 paginationDiv.appendChild(prevBtn);
@@ -163,7 +171,7 @@
                 nextBtn.style.marginLeft = '10px';
                 nextBtn.style.cursor = 'pointer';
                 nextBtn.onclick = () => {
-                    fetchAndDisplayRecipes(country, dishName, currentPage + 1);
+                    fetchAndDisplayRecipes(country, dishName, currentPage + 1, sortOrder); // ←sortOrderも引数に追加
                     window.scrollTo(0, 0); 
                 };
                 paginationDiv.appendChild(nextBtn);
