@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Aroshin4/HTML#readme",
   "dependencies": {
+<<<<<<< HEAD
 <<<<<<< Updated upstream
     "cors": "^2.8.6",
     "express": "^5.2.1",
@@ -28,5 +29,10 @@
     "express": "^5.2.1",
     "multer": "^2.1.1"
 >>>>>>> Stashed changes
+=======
+    "express": "^5.2.1",
+    "multer": "^2.1.0",
+    "mysql2": "^3.19.1"
+>>>>>>> origin/main
   }
 }
