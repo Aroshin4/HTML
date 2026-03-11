@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Aroshin4/HTML#readme",
   "dependencies": {
     "express": "^5.2.1",
-    "multer": "^2.1.0"
+    "multer": "^2.1.0",
+    "mysql2": "^3.19.1"
   }
 }

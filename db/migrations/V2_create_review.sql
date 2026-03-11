@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS review (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  recipe_id INT NOT NULL,
+  reviewer_name VARCHAR(191) NOT NULL,
+  comment TEXT NOT NULL,
+  rating TINYINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_review_recipe FOREIGN KEY (recipe_id) REFERENCES recipe(id) ON DELETE CASCADE
+);

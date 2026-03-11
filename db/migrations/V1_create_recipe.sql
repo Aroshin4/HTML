@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS recipe (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  country_text VARCHAR(191) NOT NULL,
+  dish_name VARCHAR(191) NOT NULL,
+  photo_url VARCHAR(512),
+  method_text MEDIUMTEXT NOT NULL,
+  ingredients_text MEDIUMTEXT NOT NULL,
+  substitutes_text MEDIUMTEXT NOT NULL,
+  likes INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
