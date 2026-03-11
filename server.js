@@ -19,6 +19,9 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
 }
@@ -170,6 +173,9 @@ app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
 app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
 app.get('/recipe/:id', (req, res) => res.sendFile(__dirname + '/recipe.html'));
 
-app.listen(port, () => {
+// マイグレーション実行後にサーバーを起動
+startServer().then(() => {
+  app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
+  });
 });
