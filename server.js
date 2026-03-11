@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');  // mysql2を追加
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const app = express();
 const port = 3000;
 
@@ -16,6 +17,92 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
+
+// ===== マイグレーション機能 =====
+// マイグレーション履歴テーブルを作成
+async function initMigrationsTable() {
+  const connection = await pool.getConnection();
+  try {
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS migrations_applied (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL UNIQUE,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ migrations_applied テーブルが準備できました');
+  } finally {
+    connection.release();
+  }
+}
+
+// マイグレーションを自動実行
+async function runMigrations() {
+  const migrationsDir = path.join(__dirname, 'db', 'migrations');
+  
+  // migrationsディレクトリが存在するか確認
+  if (!fs.existsSync(migrationsDir)) {
+    console.log('⚠ db/migrations ディレクトリが見つかりません');
+    return;
+  }
+
+  // ファイルを読み込んでソート（V1, V2, V3... 順）
+  const files = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
+    .sort();
+
+  // マイグレーション履歴テーブルを準備
+  await initMigrationsTable();
+
+  const connection = await pool.getConnection();
+  try {
+    for (const file of files) {
+      // 既に実行済みかチェック
+      const [existing] = await connection.execute(
+        'SELECT * FROM migrations_applied WHERE filename = ?',
+        [file]
+      );
+
+      if (existing.length > 0) {
+        console.log(`⊘ ${file} は既に実行済みです`);
+        continue;
+      }
+
+      // SQLファイルを読み込む
+      const sqlPath = path.join(migrationsDir, file);
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+
+      try {
+        // マイグレーションを実行
+        await connection.execute(sql);
+        
+        // 実行履歴を記録
+        await connection.execute(
+          'INSERT INTO migrations_applied (filename) VALUES (?)',
+          [file]
+        );
+        
+        console.log(`✓ ${file} を実行しました`);
+      } catch (err) {
+        console.error(`✗ ${file} の実行に失敗しました:`, err.message);
+      }
+    }
+  } finally {
+    connection.release();
+  }
+}
+
+// サーバー起動時にマイグレーションを実行
+async function startServer() {
+  try {
+    console.log('マイグレーションを実行中...');
+    await runMigrations();
+    console.log('✓ マイグレーション完了\n');
+  } catch (err) {
+    console.error('マイグレーション実行エラー:', err);
+    process.exit(1);
+  }
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -186,8 +273,11 @@ app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
 app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
 app.get('/recipe/:id', (req, res) => res.sendFile(__dirname + '/recipe.html'));
 
-app.listen(port, () => {
+// マイグレーション実行後にサーバーを起動
+startServer().then(() => {
+  app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
+  });
 });
 
 // 特定のレシピを取得するAPI
