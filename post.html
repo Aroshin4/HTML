@@ -165,6 +165,11 @@
             if (response.ok) {
                 alert('Recipe posted successfully!');
                 window.location.href = '/browse';
+            } else {
+                const errorData = await response.json();
+                alert('Error: ' + (errorData.error || 'Failed to post recipe'));
+                console.error('Response status:', response.status);
+                console.error('Error details:', errorData);
             }
         });
     </script>
