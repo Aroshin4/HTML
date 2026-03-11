@@ -149,6 +149,10 @@ app.post('/api/recipes', upload.single('photo'), async (req, res) => {
   const { author, country, dishName, method, ingredients, substitutes } =
     req.body;
   const photo = req.file ? req.file.filename : null;
+  
+  console.log('POST /api/recipes received:');
+  console.log({ author, country, dishName, photo, method, ingredients, substitutes });
+  
   try {
     await pool.execute(
       'INSERT INTO recipes (author, country, dishName, photo, method, ingredients, substitutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -156,7 +160,8 @@ app.post('/api/recipes', upload.single('photo'), async (req, res) => {
     );
     res.status(201).json({ message: 'Recipe posted successfully!' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Database error:', err);
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 
