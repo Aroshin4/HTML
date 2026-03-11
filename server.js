@@ -10,10 +10,10 @@ const port = 3000;
 const pool = mysql.createPool({
   //host: 'db',  // Dockerコンテナ名
   host: process.env.DB_HOST || 'localhost',  // or '127.0.0.1'
-  port: process.env.DB_PORT || 3307,
-  user: 'jpuser',
-  password: 'jppw',
-  database: 'jpfood',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'jpuser',
+  password: process.env.DB_PASSWORD || 'jppw',
+  database: process.env.DB_NAME || 'jpfood',
   waitForConnections: true,
   connectionLimit: 10,
 });
