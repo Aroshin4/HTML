@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2/promise');  // mysql2を追加
+const mysql = require('mysql2/promise');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -8,8 +8,7 @@ const port = 3000;
 
 // DB接続プールの作成
 const pool = mysql.createPool({
-  //host: 'db',  // Dockerコンテナ名
-  host: process.env.DB_HOST || 'localhost',  // or '127.0.0.1'
+  host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 3307,
   user: 'jpuser',
   password: 'jppw',
@@ -19,7 +18,6 @@ const pool = mysql.createPool({
 });
 
 // ===== マイグレーション機能 =====
-// マイグレーション履歴テーブルを作成
 async function initMigrationsTable() {
   const connection = await pool.getConnection();
   try {
@@ -30,58 +28,43 @@ async function initMigrationsTable() {
         executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✓ migrations_applied テーブルが準備できました');
+    
+    // レビュー機能用のテーブルも念のためここで作成・確認しておきます
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        recipe_id INT NOT NULL,
+        reviewerName VARCHAR(255),
+        rating INT,
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ データベースのテーブル準備が完了しました');
   } finally {
     connection.release();
   }
 }
 
-// マイグレーションを自動実行
 async function runMigrations() {
   const migrationsDir = path.join(__dirname, 'db', 'migrations');
-  
-  // migrationsディレクトリが存在するか確認
-  if (!fs.existsSync(migrationsDir)) {
-    console.log('⚠ db/migrations ディレクトリが見つかりません');
-    return;
-  }
+  if (!fs.existsSync(migrationsDir)) return;
 
-  // ファイルを読み込んでソート（V1, V2, V3... 順）
-  const files = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql'))
-    .sort();
-
-  // マイグレーション履歴テーブルを準備
+  const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   await initMigrationsTable();
 
   const connection = await pool.getConnection();
   try {
     for (const file of files) {
-      // 既に実行済みかチェック
-      const [existing] = await connection.execute(
-        'SELECT * FROM migrations_applied WHERE filename = ?',
-        [file]
-      );
+      const [existing] = await connection.execute('SELECT * FROM migrations_applied WHERE filename = ?', [file]);
+      if (existing.length > 0) continue;
 
-      if (existing.length > 0) {
-        console.log(`⊘ ${file} は既に実行済みです`);
-        continue;
-      }
-
-      // SQLファイルを読み込む
       const sqlPath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(sqlPath, 'utf8');
 
       try {
-        // マイグレーションを実行
-        await connection.execute(sql);
-        
-        // 実行履歴を記録
-        await connection.execute(
-          'INSERT INTO migrations_applied (filename) VALUES (?)',
-          [file]
-        );
-        
+        await connection.query(sql); // 複数ステートメントを含む可能性を考慮しqueryを使用
+        await connection.execute('INSERT INTO migrations_applied (filename) VALUES (?)', [file]);
         console.log(`✓ ${file} を実行しました`);
       } catch (err) {
         console.error(`✗ ${file} の実行に失敗しました:`, err.message);
@@ -92,15 +75,11 @@ async function runMigrations() {
   }
 }
 
-// サーバー起動時にマイグレーションを実行
 async function startServer() {
   try {
-    console.log('マイグレーションを実行中...');
     await runMigrations();
-    console.log('✓ マイグレーション完了\n');
   } catch (err) {
     console.error('マイグレーション実行エラー:', err);
-    process.exit(1);
   }
 }
 
@@ -110,135 +89,96 @@ app.use(express.urlencoded({ extended: true }));
 if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
 }
-// multerの設定
+
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/') // uploadsフォルダに保存
-    },
-    filename: function (req, file, cb) {
-        // 名前が被らないように
-        cb(null, Date.now() + '-' + file.originalname)
-    }
+    destination: function (req, file, cb) { cb(null, 'uploads/') },
+    filename: function (req, file, cb) { cb(null, Date.now() + '-' + file.originalname) }
 });
 const upload = multer({ storage: storage });
 
-// ブラウザから「/uploads/画像名」で直接アクセスできるようにする設定
 app.use('/uploads', express.static('uploads'));
 app.use('/images', express.static('images'));
 
-let recipes = [];
 // --- API エンドポイント ---
 
-// 全てのレシピを取得するAPI)
+// 1. レシピ一覧の取得（検索・ソート・ページネーション対応）
 app.get('/api/recipes', async (req, res) => {
-  try {
-    const [rows] = await pool.execute(
-      'SELECT * FROM recipes ORDER BY created_at DESC'
-    );
-    res.json({
-      recipes: rows,
-      currentPage: 1,
-      totalPages: 1,
-      totalRecipes: rows.length,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const { country, dishName, sort } = req.query;
 
-//app.get('/api/recipes', (req, res) => {
-    // ページ番号と1ページあたりの件数（デフォルトは1ページ目、5件）を受け取る
-    //const page = parseInt(req.query.page) || 1;
-    //const limit = parseInt(req.query.limit) || 5;
+        let query = 'SELECT * FROM recipes WHERE 1=1';
+        let countQuery = 'SELECT COUNT(*) as total FROM recipes WHERE 1=1';
+        const queryParams = [];
+        const countParams = [];
 
-    //const { country, dishName, sort } = req.query; //←sortの追加
-    
-    //let results = recipes;
+        // 検索フィルター
+        if (country) {
+            query += ' AND country = ?';
+            countQuery += ' AND country = ?';
+            queryParams.push(country);
+            countParams.push(country);
+        }
+        if (dishName) {
+            query += ' AND dishName LIKE ?';
+            countQuery += ' AND dishName LIKE ?';
+            queryParams.push(`%${dishName}%`);
+            countParams.push(`%${dishName}%`);
+        }
 
-    // 検索フィルター
-    //if (country) {
-        //results = results.filter(r => r.country.toLowerCase() === country.toLowerCase());
-    //}
-    //if (dishName) {
-        //results = results.filter(r => r.dishName.toLowerCase().includes(dishName.toLowerCase()));
-    //}
+        // ソート順
+        if (sort === "likes") {
+            query += ' ORDER BY likes DESC, created_at DESC';
+        } else if (sort === "oldest") {
+            query += ' ORDER BY created_at ASC';
+        } else {
+            query += ' ORDER BY created_at DESC'; // default: newest
+        }
 
-    // --- ここからソートを追加 ---
-    //if (sort === "likes") {
-        //results = [...results].sort((a, b) => b.likes - a.likes);
-    //} else if (sort === "oldest") {
-        //results = [...results].sort((a, b) => a.id - b.id);
-    //} else if (sort === "newest") {
-        //results = [...results].sort((a, b) => b.id - a.id);
-    //}
-    // --- ここまで追加 ---
+        // ページネーション (LIMIT OFFSET)
+        const offset = (page - 1) * limit;
+        query += ` LIMIT ${limit} OFFSET ${offset}`; // プレースホルダーを使わず直接埋め込み(数値なので安全)
 
-    // ページネーション用の計算
-    //const startIndex = (page - 1) * limit; // 切り取る開始位置
-    //const endIndex = page * limit;         // 切り取る終了位置
-    //const paginatedResults = results.slice(startIndex, endIndex);
+        const [rows] = await pool.query(query, queryParams);
+        const [countResult] = await pool.query(countQuery, countParams);
+        const totalRecipes = countResult[0].total;
 
-    //res.json({
-        //recipes: paginatedResults,
-        //currentPage: page,
-        //totalPages: Math.ceil(results.length / limit),
-        //totalRecipes: results.length
-    //});
-//});
-
-// 国の一覧を取得するAPI
-app.get('/api/countries', (req, res) => {
-    const countries = [...new Set(recipes.map(r => r.country))];
-    res.json(countries);
-});
-
-app.get('/api/dish-names', (req, res) => {
-    const dishNames = [...new Set(recipes.map(r => r.dishName))];
-    res.json(dishNames);
-});
-
-//app.post('/api/recipes', upload.single('photo'), (req, res) => {
-    //const { author, country, dishName, method, ingredients, substitutes } = req.body;
-    
-    // 画像がアップロードされていればそのパスを保存、なければ空文字
-    //const photoUrl = req.file ? '/uploads/' + req.file.filename : ''; 
-    
-    //const newRecipe = {
-        //id: Date.now(),
-        //author,
-        //country,
-        //dishName,
-        //photoUrl, // 画像のパスを保存
-        //method,
-        //ingredients,
-        //substitutes,
-        //likes: 0,
-        //reviews: []
-    //};
-    
-    //recipes.push(newRecipe);
-    //res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
-//});
-// レシピのlikesを増やすAPI
-app.post('/api/recipes/:id/like', (req, res) => {
-    const recipeId = parseInt(req.params.id);
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        recipe.likes += 1;
-        res.json({ message: 'Liked!', likes: recipe.likes });
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
+        res.json({
+            recipes: rows,
+            currentPage: page,
+            totalPages: Math.ceil(totalRecipes / limit),
+            totalRecipes: totalRecipes
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
+// 2. 国の一覧を取得する
+app.get('/api/countries', async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT DISTINCT country FROM recipes WHERE country IS NOT NULL');
+        res.json(rows.map(r => r.country));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. 料理名一覧を取得する
+app.get('/api/dish-names', async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT DISTINCT dishName FROM recipes WHERE dishName IS NOT NULL');
+        res.json(rows.map(r => r.dishName));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. 新規レシピの投稿
 app.post('/api/recipes', upload.single('photo'), async (req, res) => {
-  const { author, country, dishName, method, ingredients, substitutes } =
-    req.body;
+  const { author, country, dishName, method, ingredients, substitutes } = req.body;
   const photo = req.file ? req.file.filename : null;
-  
-  console.log('POST /api/recipes received:');
-  console.log({ author, country, dishName, photo, method, ingredients, substitutes });
   
   try {
     await pool.execute(
@@ -247,23 +187,62 @@ app.post('/api/recipes', upload.single('photo'), async (req, res) => {
     );
     res.status(201).json({ message: 'Recipe posted successfully!' });
   } catch (err) {
-    console.error('Database error:', err);
-    res.status(500).json({ error: err.message, stack: err.stack });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// レビューを追加するAPI
-app.post('/api/recipes/:id/review', (req, res) => {
-    const recipeId = parseInt(req.params.id);
-    const { reviewerName, comment, rating } = req.body;
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        const newReview = { reviewerName, comment, rating, date: new Date() };
-        recipe.reviews.push(newReview);
-        res.json({ message: 'Review added!', reviews: recipe.reviews });
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
+// 5. 単一レシピの詳細取得（レビューも含めて取得）
+app.get('/api/recipes/:id', async (req, res) => {
+    try {
+        const recipeId = parseInt(req.params.id);
+        const [recipes] = await pool.execute('SELECT * FROM recipes WHERE id = ?', [recipeId]);
+        
+        if (recipes.length === 0) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+        
+        const recipe = recipes[0];
+        
+        // レビューも取得して紐付ける
+        const [reviews] = await pool.execute('SELECT * FROM reviews WHERE recipe_id = ? ORDER BY created_at DESC', [recipeId]);
+        recipe.reviews = reviews;
+
+        res.json(recipe);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 6. レシピのいいねを増やす
+app.post('/api/recipes/:id/like', async (req, res) => {
+    try {
+        const recipeId = parseInt(req.params.id);
+        await pool.execute('UPDATE recipes SET likes = likes + 1 WHERE id = ?', [recipeId]);
+        
+        const [rows] = await pool.execute('SELECT likes FROM recipes WHERE id = ?', [recipeId]);
+        if (rows.length > 0) {
+            res.json({ message: 'Liked!', likes: rows[0].likes });
+        } else {
+            res.status(404).json({ message: 'Recipe not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 7. レビューを追加する
+app.post('/api/recipes/:id/review', async (req, res) => {
+    try {
+        const recipeId = parseInt(req.params.id);
+        const { reviewerName, comment, rating } = req.body;
+        
+        await pool.execute(
+            'INSERT INTO reviews (recipe_id, reviewerName, rating, comment) VALUES (?, ?, ?, ?)',
+            [recipeId, reviewerName, rating, comment]
+        );
+        res.json({ message: 'Review added successfully!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -273,21 +252,9 @@ app.get('/post', (req, res) => res.sendFile(__dirname + '/post.html'));
 app.get('/browse', (req, res) => res.sendFile(__dirname + '/browse.html'));
 app.get('/recipe/:id', (req, res) => res.sendFile(__dirname + '/recipe.html'));
 
-// マイグレーション実行後にサーバーを起動
+// サーバー起動
 startServer().then(() => {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
-});
-
-// 特定のレシピを取得するAPI
-app.get('/api/recipes/:id', (req, res) => {
-    const recipeId = parseInt(req.params.id);
-    const recipe = recipes.find(r => r.id === recipeId);
-
-    if (recipe) {
-        res.json(recipe);
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
-    }
 });
