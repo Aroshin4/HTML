@@ -6,75 +6,276 @@
     <title>Browse Recipes</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', 'Sawarabi Mincho', sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-        .recipe-card { border: 1px solid #007bff; padding: 15px; margin-top: 15px; border-radius: 5px; }
-        
-        .thumbnail { width: 100%; height: 250px; object-fit: cover; border-radius: 5px; transition: opacity 0.3s; }
-        .thumbnail:hover { opacity: 0.8; }
-        .no-image { width: 100%; height: 250px; background-color: #e9ecef; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-weight: bold; text-decoration: none; transition: opacity 0.3s; text-align: center;}
-        .no-image:hover { opacity: 0.8; }
-        /* 左側バナーのスタイル */
+        body {
+            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #fff4e6, #ffe8cc);
+            color: #5a3e2b;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- サイドバー --- */
         .side-banner {
             position: fixed;
             top: 0;
             left: 0;
-            width: 120px; /* 幅を拡大 */
+            width: 120px;
             height: 100%;
             background-color: rgba(255, 255, 255, 0.9);
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             display: flex;
-            flex-direction: column; /* 縦方向に配置 */
+            flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* 上部に寄せる */
-            padding-top: 20px; /* 上部に余白を追加 */
+            justify-content: flex-start;
+            padding-top: 20px;
             z-index: 1000;
         }
 
         .side-banner p {
             margin: 0;
-            font-size: 1.5rem; /* index.htmlと一致 */
+            font-size: 1.5rem;
             font-weight: bold;
             color: #5a3e2b;
-            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
-            line-height: 1.2;
         }
 
         .side-banner a {
-            position: fixed; /* Ensure the logo stays fixed */
-            top: 20px; /* Adjust the top position for the logo */
-            left: -14px; /* Adjusted to move the logo slightly to the left */
-            width: 150px; /* ロゴの幅を拡大 */
-            height: 150px; /* ロゴの高さを拡大 */
-            background: url('images/Wa-lterna-logo.png') no-repeat center center;
+            position: fixed;
+            top: 20px;
+            left: -14px;
+            width: 150px;
+            height: 150px;
+            background: url('/images/Wa-lterna-logo.png') no-repeat center center;
             background-size: contain;
             text-decoration: none;
-            margin-bottom: 20px; /* ロゴの下に余白を追加 */
+            margin-bottom: 20px;
+        }
+
+        .side-banner a:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- メインコンテンツ --- */
+        .content {
+            margin-left: 140px;
+            padding: 40px 20px;
+            width: calc(100% - 140px);
+            box-sizing: border-box;
+        }
+
+        .recipe-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+            min-height: 80vh;
+        }
+
+        .nav-links {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #d83434;
+            font-weight: bold;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-family: 'Sawarabi Mincho', serif;
+            font-size: 2.5rem;
+            border-bottom: 3px solid #d83434;
+            padding-bottom: 10px;
+            margin-top: 0;
+            color: #5a3e2b;
+        }
+
+        /* --- 検索フォーム --- */
+        #searchForm {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        select, input[type="text"] {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            font-family: 'Roboto', sans-serif;
+            color: #5a3e2b;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        button {
+            font-family: 'Roboto', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        button[type="submit"] {
+            background-color: #5a3e2b;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            white-space: nowrap;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #7a5e4b;
+        }
+
+        /* --- レシピカード --- */
+        .recipe-card {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .no-image {
+            width: 100%;
+            height: 250px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            margin-bottom: 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .recipe-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: #5a3e2b;
+            font-family: 'Sawarabi Mincho', serif;
+        }
+
+        .recipe-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .recipe-card a:hover {
+            color: #d83434;
+        }
+
+        .like-btn {
+            background-color: #ff7f50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            margin-left: 10px;
+            font-size: 0.9rem;
+        }
+
+        .like-btn:hover {
+            background-color: #e67348;
+        }
+
+        .like-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- ページネーション --- */
+        #pagination {
+            margin-top: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .pagination-btn {
+            background-color: #ff7f50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+
+        .pagination-btn:hover {
+            background-color: #e67348;
+        }
+
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            .side-banner { display: none; }
+            .content { margin-left: 0; width: 100%; padding: 20px; }
+            #searchForm { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
-    <a href="/">← Back to Home</a>
-    <h2>Browse & Search Recipes</h2>
-    
-    <form id="searchForm" style="margin-bottom: 20px;">
-        <select id="searchCountry" style="padding: 5px; margin-right: 10px;">
-            <option value="">-- All Countries --</option>
-        </select>
-        
-        <input type="text" id="searchDishName" placeholder="Filter by Dish Name" list="dish-list" style="padding: 5px;">
-        <datalist id="dish-list"></datalist>
+    <div class="side-banner">
+        <p>Menu</p>
+        <a href="/" aria-label="Home"></a>
+    </div>
 
-        <select id="sortOrder" style="padding: 5px; margin-left: 10px;">
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="likes">Most Liked</option>
-        </select>
-        
-        <button type="submit" style="padding: 5px 15px;">Search</button>
-    </form>
-    
-    <div id="results"></div>
-    <div id="pagination" style="margin-top: 20px; text-align: center; margin-bottom: 40px;"></div>
+    <div class="content">
+        <div class="recipe-container">
+            <div class="nav-links">
+                <a href="/">← Back to Home</a>
+            </div>
+
+            <h2>Browse & Search Recipes</h2>
+            
+            <form id="searchForm">
+                <select id="searchCountry">
+                    <option value="">-- All Countries --</option>
+                </select>
+                
+                <input type="text" id="searchDishName" placeholder="Filter by Dish Name" list="dish-list">
+                <datalist id="dish-list"></datalist>
+
+                <select id="sortOrder">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="likes">Most Liked</option>
+                </select>
+                
+                <button type="submit">Search</button>
+            </form>
+            
+            <div id="results"></div>
+            <div id="pagination"></div>
+        </div>
+    </div>
 
     <div class="side-banner">
         <p>Menu</p>
@@ -156,13 +357,13 @@
 
                 const isLiked = likedRecipes.includes(recipe.id);
                 const likeBtnHtml = isLiked 
-                    ? `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`
-                    : `<button id="like-btn-${recipe.id}" onclick="likeRecipe(${recipe.id})" style="margin-left: 10px; padding: 5px; cursor: pointer; border-radius: 4px;">Like!</button>`;
+                    ? `<button class="like-btn" disabled>Liked ❤️</button>`
+                    : `<button id="like-btn-${recipe.id}" onclick="likeRecipe(${recipe.id})" class="like-btn">Like! 👍</button>`;
 
                 card.innerHTML = `
                     ${thumbnailHtml}
-                    <h3 style="margin-top: 15px;">
-                        <a href="/recipe/${recipe.id}" style="text-decoration: none; color: inherit;">
+                    <h3>
+                        <a href="/recipe/${recipe.id}">
                             ${recipe.dishName}
                         </a>
                         <span style="font-size: 0.8em; color: #666;">(${recipe.country})</span>
@@ -190,9 +391,7 @@
             if (currentPage > 1) {
                 const prevBtn = document.createElement('button');
                 prevBtn.textContent = '← Previous';
-                prevBtn.style.padding = '8px 15px';
-                prevBtn.style.marginRight = '10px';
-                prevBtn.style.cursor = 'pointer';
+                prevBtn.className = 'pagination-btn';
                 prevBtn.onclick = () => {
                     fetchAndDisplayRecipes(country, dishName, currentPage - 1, sortOrder); // ←sortOrderも引数に追加
                     window.scrollTo(0, 0); 
@@ -211,9 +410,7 @@
             if (currentPage < totalPages) {
                 const nextBtn = document.createElement('button');
                 nextBtn.textContent = 'Next →';
-                nextBtn.style.padding = '8px 15px';
-                nextBtn.style.marginLeft = '10px';
-                nextBtn.style.cursor = 'pointer';
+                nextBtn.className = 'pagination-btn';
                 nextBtn.onclick = () => {
                     fetchAndDisplayRecipes(country, dishName, currentPage + 1, sortOrder); // ←sortOrderも引数に追加
                     window.scrollTo(0, 0); 
@@ -237,7 +434,7 @@
                 
                 const btn = document.getElementById(`like-btn-${id}`);
                 if (btn) {
-                    btn.outerHTML = `<button disabled style="margin-left: 10px; padding: 5px; cursor: not-allowed; background-color: #ccc; border: 1px solid #999; border-radius: 4px;">Liked❤️</button>`;
+                    btn.outerHTML = `<button class="like-btn" disabled>Liked ❤️</button>`;
                 }
             }
         }

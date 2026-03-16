@@ -6,9 +6,117 @@
     <title>Post a Recipe</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', 'Sawarabi Mincho', sans-serif; padding: 20px; max-width: 700px; margin: auto; }
-        .form-group { margin-bottom: 20px; }
-        input[type="text"], textarea, select { width: 100%; padding: 10px; box-sizing: border-box; margin-top: 5px; font-size: 16px; }
+        body {
+            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #fff4e6, #ffe8cc);
+            color: #5a3e2b;
+            display: flex;
+        }
+
+        /* --- サイドバー --- */
+        .side-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 120px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+            z-index: 1000;
+        }
+
+        .side-banner p {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #5a3e2b;
+        }
+
+        .side-banner a {
+            position: fixed;
+            top: 20px;
+            left: -14px;
+            width: 150px;
+            height: 150px;
+            background: url('/images/Wa-lterna-logo.png') no-repeat center center;
+            background-size: contain;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .side-banner a:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- メインコンテンツ --- */
+        .content {
+            margin-left: 140px;
+            padding: 40px 20px;
+            width: calc(100% - 140px);
+            box-sizing: border-box;
+        }
+
+        .recipe-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .nav-links {
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .nav-links a {
+            margin-right: 20px;
+            text-decoration: none;
+            color: #d83434;
+            font-weight: bold;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-family: 'Sawarabi Mincho', serif;
+            font-size: 2.5rem;
+            border-bottom: 3px solid #d83434;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        h3 {
+            border-left: 5px solid #ff7f50;
+            padding-left: 15px;
+            margin-top: 30px;
+            color: #5a3e2b;
+        }
+
+        /* --- フォームスタイル --- */
+        .form-group { margin-bottom: 25px; }
+        
+        input[type="text"], textarea, select { 
+            width: 100%; 
+            padding: 12px; 
+            box-sizing: border-box; 
+            margin-top: 5px; 
+            font-size: 16px; 
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.9);
+            font-family: 'Roboto', sans-serif;
+        }
+        
         input[type="file"] { margin-top: 5px; font-size: 16px; }
         
         .dynamic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -16,105 +124,94 @@
         .arrow { font-weight: bold; color: #555; }
         .step-number { font-weight: bold; width: 30px; text-align: right; }
         
-        .add-btn { background-color: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 14px; }
-        .remove-btn { background-color: #dc3545; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
-        .submit-btn { background-color: #007bff; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%; margin-top: 20px; }
-        /* 左側バナーのスタイル */
-        .side-banner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 120px; /* 幅を拡大 */
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column; /* 縦方向に配置 */
-            align-items: center;
-            justify-content: flex-start; /* 上部に寄せる */
-            padding-top: 20px; /* 上部に余白を追加 */
-            z-index: 1000;
-        }
+        button { transition: 0.3s; font-family: 'Roboto', sans-serif; }
 
-        .side-banner p {
-            margin: 0;
-            font-size: 1.5rem; /* index.htmlと一致 */
-            font-weight: bold;
-            color: #5a3e2b;
-            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
-            line-height: 1.2;
-        }
+        .add-btn { background-color: #5a3e2b; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 25px; font-size: 14px; font-weight: bold; }
+        .add-btn:hover { background-color: #7a5e4b; }
 
-        .side-banner a {
-            position: fixed; /* Ensure the logo stays fixed */
-            top: 20px; /* Adjust the top position for the logo */
-            left: -14px; /* Adjusted to move the logo slightly to the left */
-            width: 150px; /* ロゴの幅を拡大 */
-            height: 150px; /* ロゴの高さを拡大 */
-            background: url('images/Wa-lterna-logo.png') no-repeat center center;
-            background-size: contain;
-            text-decoration: none;
-            margin-bottom: 20px; /* ロゴの下に余白を追加 */
+        .remove-btn { background-color: #d83434; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .remove-btn:hover { background-color: #b02a2a; }
+
+        .submit-btn { background-color: #ff7f50; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 40px; font-size: 18px; width: 100%; margin-top: 30px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .submit-btn:hover { background-color: #e67348; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.15); }
+
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            .side-banner { display: none; }
+            .content { margin-left: 0; width: 100%; }
         }
     </style>
 </head>
 <body>
-    <a href="/">← Back to Home</a>
-    <h2>Post a New Recipe</h2>
-    
-    <form id="postForm">
-        <div class="form-group">
-            <input type="text" id="userName" placeholder="Your Name (Author)" required>
-        </div>
-        
-        <div class="form-group">
-            <select id="country" required>
-                <option value="" disabled selected>Select a Country</option>
-                <option value="France">France</option>
-                <option value="Italy">Italy</option>
-                <option value="South Korea">South Korea</option>
-                <option value="USA">USA</option>
-                <option value="UK">UK</option>
-                <option value="Australia">Australia</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
+    <div class="side-banner">
+        <p>Menu</p>
+        <a href="/" aria-label="Home"></a>
+    </div>
 
-        <div class="form-group">
-            <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="photo" style="display:block; font-weight:bold;">Photo (Optional)</label>
-            <input type="file" id="photo" accept="image/*">
-        </div>
-
-        <div class="form-group">
-            <h3>Ingredients & Substitutes</h3>
-            <p style="font-size: 14px; color: #666;">* Leave "Substitute" blank if not needed.</p>
-            <div id="ingredients-container">
-                <div class="dynamic-row">
-                    <input type="text" class="ing-original" placeholder="Original (e.g., Soy Sauce)" required>
-                    <span class="arrow">➔</span>
-                    <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
-                </div>
+    <div class="content">
+        <div class="recipe-container">
+            <div class="nav-links">
+                <a href="/">← Back to Home</a>
+                <a href="/browse">← Back to Browse</a>
             </div>
-            <button type="button" class="add-btn" onclick="addIngredient()">+ Add Ingredient</button>
-        </div>
 
-        <div class="form-group">
-            <h3>Cooking Method</h3>
-            <div id="steps-container">
-                <div class="dynamic-row step-row">
-                    <span class="step-number">1.</span>
-                    <input type="text" class="step-input" placeholder="Describe this step" required>
+            <h2>Post a New Recipe</h2>
+            
+            <form id="postForm">
+                <div class="form-group">
+                    <input type="text" id="userName" placeholder="Your Name (Author)" required>
                 </div>
-            </div>
-            <button type="button" class="add-btn" onclick="addStep()">+ Add Step</button>
-        </div>
+                
+                <div class="form-group">
+                    <select id="country" required>
+                        <option value="" disabled selected>Select a Country</option>
+                        <option value="France">France</option>
+                        <option value="Italy">Italy</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="USA">USA</option>
+                        <option value="UK">UK</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
-        <button type="submit" class="submit-btn">Submit Recipe</button>
-    </form>
+                <div class="form-group">
+                    <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="photo" style="display:block; font-weight:bold;">Photo (Optional)</label>
+                    <input type="file" id="photo" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <h3>Ingredients & Substitutes</h3>
+                    <p style="font-size: 14px; color: #666;">* Leave "Substitute" blank if not needed.</p>
+                    <div id="ingredients-container">
+                        <div class="dynamic-row">
+                            <input type="text" class="ing-original" placeholder="Original (e.g., Soy Sauce)" required>
+                            <span class="arrow">➔</span>
+                            <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
+                        </div>
+                    </div>
+                    <button type="button" class="add-btn" onclick="addIngredient()">+ Add Ingredient</button>
+                </div>
+
+                <div class="form-group">
+                    <h3>Cooking Method</h3>
+                    <div id="steps-container">
+                        <div class="dynamic-row step-row">
+                            <span class="step-number">1.</span>
+                            <input type="text" class="step-input" placeholder="Describe this step" required>
+                        </div>
+                    </div>
+                    <button type="button" class="add-btn" onclick="addStep()">+ Add Step</button>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Recipe</button>
+            </form>
+        </div>
+    </div>
 
     <script>
         function addIngredient() {
