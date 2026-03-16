@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Browse Recipes</title>
+    <title>Wa-lterna - Browse Recipes</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
         body {
@@ -197,7 +197,7 @@
         .like-btn {
             background-color: #ff7f50;
             color: white;
-            padding: 5px 15px;
+            padding: 8px 15px;
             border-radius: 15px;
             margin-left: 10px;
             font-size: 0.9rem;
@@ -226,6 +226,9 @@
             border-radius: 20px;
             font-weight: bold;
             margin: 0 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
         .pagination-btn:hover {
@@ -241,6 +244,7 @@
     </style>
 </head>
 <body>
+
     <div class="side-banner">
         <p>Menu</p>
         <a href="/" aria-label="Home"></a>
@@ -248,6 +252,7 @@
 
     <div class="content">
         <div class="recipe-container">
+            
             <div class="nav-links">
                 <a href="/">← Back to Home</a>
             </div>
@@ -273,6 +278,7 @@
             
             <div id="results"></div>
             <div id="pagination"></div>
+
         </div>
     </div>
 
@@ -304,38 +310,32 @@
             });
         }
 
-        // --- ここから下が大きく変更・追加された部分です ---
-        
-        // 現在のページを記憶しておく変数
         let currentPage = 1;
 
         document.getElementById('searchForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            // 検索ボタンを押した時は必ず1ページ目に戻す
             currentPage = 1;
             const country = document.getElementById('searchCountry').value;
             const dishName = document.getElementById('searchDishName').value;
-            const sortOrder = document.getElementById('sortOrder').value; // ←追加
-            fetchAndDisplayRecipes(country, dishName, currentPage, sortOrder); // ←sortOrderも引数に追加
+            const sortOrder = document.getElementById('sortOrder').value;
+            fetchAndDisplayRecipes(country, dishName, currentPage, sortOrder);
         });
 
-        // page引数 (デフォルトは1) を追加
-        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1, sortOrder = 'newest') { // ←sortOrderも引数に追加
-            let url = `/api/recipes?page=${page}&sort=${sortOrder}&`; // ←sortOrderもクエリパラメータに追加
+        async function fetchAndDisplayRecipes(country = '', dishName = '', page = 1, sortOrder = 'newest') {
+            let url = `/api/recipes?page=${page}&sort=${sortOrder}&`;
             if (country) url += `country=${encodeURIComponent(country)}&`;
             if (dishName) url += `dishName=${encodeURIComponent(dishName)}`;
 
             const response = await fetch(url);
             const data = await response.json(); 
-            const recipes = data.recipes; // サーバーから返ってくるデータ構造が変わったため .recipes を取り出す
+            const recipes = data.recipes;
             
-
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = ''; 
 
             if (recipes.length === 0) {
                 resultsDiv.innerHTML = '<p>No recipes found.</p>';
-                document.getElementById('pagination').innerHTML = ''; // レシピがなければページボタンも消す
+                document.getElementById('pagination').innerHTML = '';
                 return;
             }
 
@@ -345,14 +345,17 @@
                 const card = document.createElement('div');
                 card.className = 'recipe-card';
                 
-                const thumbnailHtml = recipe.photoUrl 
-                    ? `<a href="/recipe/${recipe.id}"><img src="${recipe.photoUrl}" alt="${recipe.dishName}" class="thumbnail"></a>`
+                const photoPath = recipe.photo ? `/uploads/${recipe.photo}` : '';
+                const thumbnailHtml = photoPath 
+                    ? `<a href="/recipe/${recipe.id}"><img src="${photoPath}" alt="${recipe.dishName}" class="thumbnail"></a>`
                     : `<a href="/recipe/${recipe.id}" class="no-image">No Image<br>(Click to view details)</a>`;
 
                 const isLiked = likedRecipes.includes(recipe.id);
+                
+                // [修正] ボタンにCSSで指定したクラス (class="like-btn") を適用しました
                 const likeBtnHtml = isLiked 
-                    ? `<button class="like-btn" disabled>Liked ❤️</button>`
-                    : `<button id="like-btn-${recipe.id}" onclick="likeRecipe(${recipe.id})" class="like-btn">Like! 👍</button>`;
+                    ? `<button disabled class="like-btn">Liked❤️</button>`
+                    : `<button id="like-btn-${recipe.id}" class="like-btn" onclick="likeRecipe(${recipe.id})">Like!</button>`;
 
                 card.innerHTML = `
                     ${thumbnailHtml}
@@ -363,57 +366,53 @@
                         <span style="font-size: 0.8em; color: #666;">(${recipe.country})</span>
                     </h3>
                     
-                    <p>❤️ Likes: <span id="likes-${recipe.id}">${recipe.likes}</span> 
-                       ${likeBtnHtml}
+                    <p style="display: flex; align-items: center;">
+                        ❤️ Likes: <span id="likes-${recipe.id}" style="margin: 0 10px;">${recipe.likes}</span> 
+                        ${likeBtnHtml}
                     </p>
                 `;
                 resultsDiv.appendChild(card);
             });
 
-            // ページ送りボタンを描画する処理を呼び出す
-            renderPagination(data.totalPages, data.currentPage, country, dishName, sortOrder); // ←sortOrderも引数に追加
+            renderPagination(data.totalPages, data.currentPage, country, dishName, sortOrder);
         }
 
-        // 新しく追加したページ送りボタンを作る関数
-        function renderPagination(totalPages, currentPage, country, dishName, sortOrder) { // ←sortOrderも引数に追加
+        function renderPagination(totalPages, currentPage, country, dishName, sortOrder) {
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = '';
 
             if (totalPages <= 1) return;
 
-            // 「前のページへ」ボタン
+            // [修正] ページ送りボタンにCSSクラス (class="pagination-btn") を適用しました
             if (currentPage > 1) {
                 const prevBtn = document.createElement('button');
                 prevBtn.textContent = '← Previous';
-                prevBtn.className = 'pagination-btn';
+                prevBtn.className = 'pagination-btn'; 
                 prevBtn.onclick = () => {
-                    fetchAndDisplayRecipes(country, dishName, currentPage - 1, sortOrder); // ←sortOrderも引数に追加
+                    fetchAndDisplayRecipes(country, dishName, currentPage - 1, sortOrder);
                     window.scrollTo(0, 0); 
                 };
                 paginationDiv.appendChild(prevBtn);
             }
 
-            // ページ番号のテキスト
             const pageInfo = document.createElement('span');
             pageInfo.textContent = ` Page ${currentPage} of ${totalPages} `;
             pageInfo.style.margin = '0 15px';
             pageInfo.style.fontWeight = 'bold';
             paginationDiv.appendChild(pageInfo);
 
-            // 「次のページへ」ボタン
             if (currentPage < totalPages) {
                 const nextBtn = document.createElement('button');
                 nextBtn.textContent = 'Next →';
                 nextBtn.className = 'pagination-btn';
                 nextBtn.onclick = () => {
-                    fetchAndDisplayRecipes(country, dishName, currentPage + 1, sortOrder); // ←sortOrderも引数に追加
+                    fetchAndDisplayRecipes(country, dishName, currentPage + 1, sortOrder);
                     window.scrollTo(0, 0); 
                 };
                 paginationDiv.appendChild(nextBtn);
             }
         }
 
-        // --- いいね機能 (変更なし) ---
         async function likeRecipe(id) {
             const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
             if (response.ok) {
@@ -428,7 +427,7 @@
                 
                 const btn = document.getElementById(`like-btn-${id}`);
                 if (btn) {
-                    btn.outerHTML = `<button class="like-btn" disabled>Liked ❤️</button>`;
+                    btn.outerHTML = `<button disabled class="like-btn">Liked❤️</button>`;
                 }
             }
         }
