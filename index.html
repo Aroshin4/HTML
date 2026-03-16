@@ -184,15 +184,80 @@
             z-index: 1000;
         }
 
-        .side-banner a {
-            display: block;
-            width: 150px; /* ロゴの幅を拡大 */
-            height: 150px; /* ロゴの高さを拡大 */
+        .side-banner p {
+            margin: 0;
+            font-size: 1.5rem; /* index.htmlと一致 */
+            font-weight: bold;
+            color: #5a3e2b;
+            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
+            line-height: 1.2;
+        }
+
+        .side-logo {
+            position: fixed; /* Ensure the logo stays fixed */
+            top: 20px; /* Adjust the top position for the logo */
+            left: 21px; /* 小さめのクリック領域を中央寄せ */
+            width: 90px; /* クリック可能な範囲を小さくする */
+            height: 90px; /* クリック可能な範囲を小さくする */
+            background: none; /* 視覚は擬似要素で描画 */
+            text-decoration: none;
+            margin-bottom: 5px; /* ロゴの下に余白を追加 */
+            transition: transform 0.2s ease;
+            border-radius: 24px;
+        }
+
+        .side-logo:hover,
+        .side-logo:focus {
+            transform: scale(1.15);
+            outline-offset: 4px;
+        }
+
+        .side-menu img {
+            width: 160px;
+            height: auto;
+            transition: transform 0.2s ease;
+        }
+
+        .side-menu a:hover img,
+        .side-menu a:focus img {
+            transform: scale(1.15);
+        }
+
+        .side-logo::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: -25px; /* もとの見た目位置に合わせる */
+            width: 130px;
+            height: 130px;
             background: url('images/Wa-lterna-logo.png') no-repeat center center;
             background-size: contain;
-            text-decoration: none;
-            margin-bottom: 20px; /* ロゴの下に余白を追加 */
+            pointer-events: none; /* 見た目はクリック対象外に */
         }
+
+        .side-menu {
+            margin-top: 100px; /* ロゴの下に配置 */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+    
+        .side-menu img{
+            width:170px;
+            height:auto;
+        }
+
+        .side-menu a {
+            text-decoration: none;
+            color: #5a3e2b;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .side-menu a:hover {
+            text-decoration: underline;
+}
     </style>
 </head>
 <body>
@@ -221,7 +286,18 @@
     </footer>
 
     <div class="side-banner">
-        <a href="/" aria-label="ホームに戻る"></a> <!-- /でホームに戻れる-->
+        <p>Menu</p>
+        <a href="/" class="side-logo" aria-label="ホームに戻る"></a>
+
+        <nav class="side-menu">
+            <a href="/browse">
+                <img src="images/Search-button.png" alt="Browse Recipes">
+            </a>
+
+            <a href="/post">
+                <img src="images/Post-button.png" alt="Post a New Recipe">
+            </a>
+        </nav>
     </div>
 </body>
 </html>
