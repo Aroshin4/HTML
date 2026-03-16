@@ -126,7 +126,6 @@ const upload = multer({ storage: storage });
 app.use('/uploads', express.static('uploads'));
 app.use('/images', express.static('images'));
 
-let recipes = [];
 // --- API エンドポイント ---
 
 // 全てのレシピを取得するAPI)
@@ -187,14 +186,28 @@ app.get('/api/recipes', async (req, res) => {
 //});
 
 // 国の一覧を取得するAPI
-app.get('/api/countries', (req, res) => {
-    const countries = [...new Set(recipes.map(r => r.country))];
+app.get('/api/countries', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name_en FROM country ORDER BY name_en'
+    );
+    const countries = rows.map(row => row.name_en);
     res.json(countries);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/dish-names', (req, res) => {
-    const dishNames = [...new Set(recipes.map(r => r.dishName))];
-    res.json(dishNames);
+app.get('/api/dish-names', async (req, res) => {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT DISTINCT dishName FROM recipes ORDER BY dishName'
+      );
+      const dishNames = rows.map(row => row.dishName);
+      res.json(dishNames);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
 });
 
 //app.post('/api/recipes', upload.single('photo'), (req, res) => {
@@ -220,15 +233,25 @@ app.get('/api/dish-names', (req, res) => {
     //res.status(201).json({ message: 'Recipe posted successfully!', recipe: newRecipe });
 //});
 // レシピのlikesを増やすAPI
-app.post('/api/recipes/:id/like', (req, res) => {
+app.post('/api/recipes/:id/like', async (req, res) => {
     const recipeId = parseInt(req.params.id);
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        recipe.likes += 1;
-        res.json({ message: 'Liked!', likes: recipe.likes });
-    } else {
+    try {
+      const [result] = await pool.execute(
+        'UPDATE recipes SET likes = likes + 1 WHERE id = ?',
+        [recipeId]
+      );
+      if (result.affectedRows > 0) {
+        // 更新後のlikesを取得
+        const [rows] = await pool.execute(
+          'SELECT likes FROM recipes WHERE id = ?',
+          [recipeId]
+        );
+        res.json({ message: 'Liked!', likes: rows[0].likes });
+      } else {
         res.status(404).json({ message: 'Recipe not found' });
+      }
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
 });
 
@@ -253,17 +276,22 @@ app.post('/api/recipes', upload.single('photo'), async (req, res) => {
 });
 
 // レビューを追加するAPI
-app.post('/api/recipes/:id/review', (req, res) => {
+app.post('/api/recipes/:id/review', async (req, res) => {
     const recipeId = parseInt(req.params.id);
     const { reviewerName, comment, rating } = req.body;
-    const recipe = recipes.find(r => r.id === recipeId);
-    
-    if (recipe) {
-        const newReview = { reviewerName, comment, rating, date: new Date() };
-        recipe.reviews.push(newReview);
-        res.json({ message: 'Review added!', reviews: recipe.reviews });
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
+    try {
+      await pool.execute(
+        'INSERT INTO reviews (recipe_id, reviewer_name, comment, rating) VALUES (?, ?, ?, ?)',
+        [recipeId, reviewerName, comment, rating]
+      );
+      // 最新のレビューを取得
+      const [rows] = await pool.execute(
+        'SELECT * FROM reviews WHERE recipe_id = ? ORDER BY created_at DESC',
+        [recipeId]
+      );
+      res.json({ message: 'Review added!', reviews: rows });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
 });
 
@@ -281,13 +309,33 @@ startServer().then(() => {
 });
 
 // 特定のレシピを取得するAPI
-app.get('/api/recipes/:id', (req, res) => {
+app.get('/api/recipes/:id', async (req, res) => {
     const recipeId = parseInt(req.params.id);
-    const recipe = recipes.find(r => r.id === recipeId);
-
-    if (recipe) {
-        res.json(recipe);
-    } else {
-        res.status(404).json({ message: 'Recipe not found' });
+    try {
+      const [recipeRows] = await pool.execute(
+        'SELECT * FROM recipes WHERE id = ?',
+        [recipeId]
+      );
+      if (recipeRows.length === 0) {
+        return res.status(404).json({ message: 'Recipe not found' });
+      }
+      const recipe = recipeRows[0];
+      
+      // レビューを取得
+      const [reviewRows] = await pool.execute(
+        'SELECT * FROM reviews WHERE recipe_id = ? ORDER BY created_at DESC',
+        [recipeId]
+      );
+      
+      recipe.reviews = reviewRows.map(review => ({
+        reviewerName: review.reviewer_name,
+        comment: review.comment,
+        rating: review.rating,
+        date: review.created_at
+      }));
+      
+      res.json(recipe);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
 });
