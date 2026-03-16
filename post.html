@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Post a Recipe</title>
+    <title>Wa-lterna - Post a Recipe</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
         body {
@@ -12,6 +12,7 @@
             background: linear-gradient(to bottom, #fff4e6, #ffe8cc);
             color: #5a3e2b;
             display: flex;
+            min-height: 100vh;
         }
 
         /* --- サイドバー --- */
@@ -68,10 +69,11 @@
             background: rgba(255, 255, 255, 0.5);
             padding: 30px;
             border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         .nav-links {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-align: left;
         }
 
@@ -92,6 +94,7 @@
             border-bottom: 3px solid #d83434;
             padding-bottom: 10px;
             margin-top: 0;
+            color: #5a3e2b;
         }
 
         h3 {
@@ -114,9 +117,10 @@
             border-radius: 5px;
             background-color: rgba(255, 255, 255, 0.9);
             font-family: 'Roboto', sans-serif;
+            color: #5a3e2b;
         }
         
-        input[type="file"] { margin-top: 5px; font-size: 16px; }
+        input[type="file"] { margin-top: 5px; font-size: 16px; font-family: 'Roboto', sans-serif; }
         
         .dynamic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .dynamic-row input { margin-top: 0; flex: 1; }
@@ -125,69 +129,81 @@
         
         button { transition: 0.3s; font-family: 'Roboto', sans-serif; }
 
-        .add-btn { background-color: #5a3e2b; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 25px; font-size: 14px; font-weight: bold; }
+        .add-btn { background-color: #5a3e2b; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 25px; font-size: 14px; font-weight: bold; margin-top: 10px;}
         .add-btn:hover { background-color: #7a5e4b; }
 
-        .remove-btn { background-color: #d83434; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .remove-btn { background-color: #d83434; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
         .remove-btn:hover { background-color: #b02a2a; }
 
-        .submit-btn { background-color: #ff7f50; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 40px; font-size: 18px; width: 100%; margin-top: 30px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .submit-btn { background-color: #ff7f50; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 40px; font-size: 18px; width: 100%; margin-top: 40px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .submit-btn:hover { background-color: #e67348; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.15); }
 
         /* スマホ対応 */
         @media (max-width: 768px) {
             .side-banner { display: none; }
-            .content { margin-left: 0; width: 100%; }
+            .content { margin-left: 0; width: 100%; padding: 20px; }
         }
     </style>
 </head>
 <body>
-    <a href="/">← Back to Home</a>
-    <h2>Post a New Recipe</h2>
-    
-    <form id="postForm">
-        <div class="form-group">
-            <input type="text" id="userName" placeholder="Your Name (Author)" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
-        </div>
-        
-        <div class="form-group">
-            <select id="country" required oninvalid="this.setCustomValidity('Please select an item in the list.')" oninput="this.setCustomValidity('')">
-                <option value="" disabled selected>Select a Country</option>
-                <option value="France">France</option>
-                <option value="Italy">Italy</option>
-                <option value="South Korea">South Korea</option>
-                <option value="USA">USA</option>
-                <option value="UK">UK</option>
-                <option value="Australia">Australia</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
 
-        <div class="form-group">
-            <input type="text" id="dishName" placeholder="Dish Name (e.g., Nikujaga)" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
-        </div>
-        
-        <div class="form-group">
-            <label for="photo" style="display:block; font-weight:bold;">Photo (Optional)</label>
-            <input type="file" id="photo" accept="image/*">
-        </div>
+    <div class="side-banner">
+        <p>Menu</p>
+        <a href="/" aria-label="Home"></a>
+    </div>
 
-        <div class="form-group">
-            <h3>Ingredients & Substitutes</h3>
-            <p style="font-size: 14px; color: #666;">* Leave "Substitute" blank if not needed.</p>
-            <div id="ingredients-container">
-                <div class="dynamic-row">
-                    <input type="text" class="ing-original" placeholder="Original (e.g., Soy Sauce)" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
-                    <span class="arrow">➔</span>
-                    <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
+    <div class="content">
+        <div class="recipe-container">
+            
+            <div class="nav-links">
+                <a href="/">← Back to Home</a>
+            </div>
+
+            <h2>Post a New Recipe</h2>
+            
+            <form id="postForm">
+                
+                <div class="form-group">
+                    <label for="userName" style="font-weight:bold;">Author Name</label>
+                    <input type="text" id="userName" placeholder="Your Name" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="country" style="font-weight:bold;">Country</label>
+                    <select id="country" required oninvalid="this.setCustomValidity('Please select an item in the list.')" oninput="this.setCustomValidity('')">
+                        <option value="" disabled selected>Select a Country</option>
+                        <option value="France">France</option>
+                        <option value="Italy">Italy</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="USA">USA</option>
+                        <option value="UK">UK</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
 
-        <div class="form-group">
-            <h3>Cooking Method</h3>
-            <div id="steps-container">
-                <div class="dynamic-row step-row">
-                    <span class="step-number">1.</span>
-                    <input type="text" class="step-input" placeholder="Describe this step" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
+                <div class="form-group">
+                    <label for="dishName" style="font-weight:bold;">Dish Name</label>
+                    <input type="text" id="dishName" placeholder="e.g., Nikujaga" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="photo" style="font-weight:bold;">Photo (Optional)</label>
+                    <input type="file" id="photo" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <h3>Ingredients & Substitutes</h3>
+                    <p style="font-size: 14px; color: #666; margin-top: 0;">* Leave "Substitute" blank if not needed.</p>
+                    
+                    <div id="ingredients-container">
+                        <div class="dynamic-row">
+                            <input type="text" class="ing-original" placeholder="Original (e.g., Soy Sauce)" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
+                            <span class="arrow">➔</span>
+                            <input type="text" class="ing-substitute" placeholder="Substitute (Optional)">
+                        </div>
+                    </div>
+                    <button type="button" class="add-btn" onclick="addIngredient()">+ Add Ingredient</button>
                 </div>
 
                 <div class="form-group">
@@ -195,7 +211,7 @@
                     <div id="steps-container">
                         <div class="dynamic-row step-row">
                             <span class="step-number">1.</span>
-                            <input type="text" class="step-input" placeholder="Describe this step" required>
+                            <input type="text" class="step-input" placeholder="Describe this step" required oninvalid="this.setCustomValidity('Please fill out this field.')" oninput="this.setCustomValidity('')">
                         </div>
                     </div>
                     <button type="button" class="add-btn" onclick="addStep()">+ Add Step</button>
@@ -203,6 +219,7 @@
 
                 <button type="submit" class="submit-btn">Submit Recipe</button>
             </form>
+
         </div>
     </div>
 
@@ -270,7 +287,6 @@
                 methodText += `${i + 1}. ${stepInputs[i].value}\n`;
             }
 
-            // 画像ファイルを送るために FormData を使用する
             const formData = new FormData();
             formData.append('author', document.getElementById('userName').value);
             formData.append('country', document.getElementById('country').value);
@@ -279,7 +295,6 @@
             formData.append('substitutes', substitutesText.trim());
             formData.append('method', methodText.trim());
 
-            // 画像ファイルが選択されていれば追加
             const photoFile = document.getElementById('photo').files[0];
             if (photoFile) {
                 formData.append('photo', photoFile);
@@ -288,7 +303,6 @@
             try {
                 const response = await fetch('/api/recipes', {
                     method: 'POST',
-                    // FormDataを送る際は 'Content-Type' ヘッダーを指定しない（ブラウザが自動で設定するため）
                     body: formData
                 });
 
@@ -296,11 +310,9 @@
                     alert('Recipe posted successfully!');
                     window.location.href = '/browse';
                 } else {
-                    // サーバーでエラーが起きた場合（500エラーなど）
                     alert('Failed to submit the recipe. Please check the terminal for errors.');
                 }
             } catch (error) {
-                // 通信自体に失敗した場合（サーバーが立ち上がっていないなど）
                 alert('Connection error. Is the server running?');
                 console.error(error);
             }
