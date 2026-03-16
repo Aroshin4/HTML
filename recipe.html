@@ -5,181 +5,39 @@
     <title>Wa-lterna-Recipe Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to bottom, #fff4e6, #ffe8cc);
-            color: #5a3e2b;
-            display: flex; /* サイドバーとコンテンツを横並びにする */
-        }
-
-        /* --- サイドバー：index.htmlのデザインと完全に統一 --- */
-        .side-banner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 120px;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 20px;
-            z-index: 1000;
-        }
-
-        .side-banner p {
-            margin: 0;
-            font-size: 1.5rem; /* index.htmlと一致 */
-            font-weight: bold;
-            color: #5a3e2b;
-            font-family: 'Roboto', 'Sawarabi Mincho', sans-serif;
-            line-height: 1.2;
-        }
-
-        .side-banner a {
-            position: fixed; /* Ensure the logo stays fixed */
-            top: 20px; /* Adjust the top position for the logo */
-            left: -14px; /* Adjusted to move the logo slightly to the left */
-            width: 150px; /* ロゴの幅を拡大 */
-            height: 150px; /* ロゴの高さを拡大 */
-            background: url('/images/Wa-lterna-logo.png') no-repeat center center;
-            background-size: contain;
-            text-decoration: none;
-            margin-bottom: 20px; /* ロゴの下に余白を追加 */
-        }
-
-        .side-banner a:hover {
-            transform: scale(1.05);
-        }
-
-        /* --- メインコンテンツのレイアウト --- */
-        .content {
-            margin-left: 140px; /* サイドバーの幅 + 余白 */
-            padding: 40px 20px;
-            width: calc(100% - 140px);
-            box-sizing: border-box;
-        }
-
-        .recipe-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.5);
-            padding: 30px;
-            border-radius: 15px;
-        }
-
-        .nav-links {
-            margin-bottom: 30px;
-            text-align: left;
-        }
-
-        .nav-links a {
-            margin-right: 20px;
-            text-decoration: none;
-            color: #d83434;
-            font-weight: bold;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-
-        .thumbnail {
-            width: 100%;
-            max-height: 500px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        /* --- レシピ詳細のスタイル --- */
-        h2 {
-            font-family: 'Sawarabi Mincho', serif;
-            font-size: 2.5rem;
-            border-bottom: 3px solid #d83434;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        h3 {
-            border-left: 5px solid #ff7f50;
-            padding-left: 15px;
-            margin-top: 30px;
-        }
-
-        .flex-container {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .flex-item {
-            flex: 1;
-        }
-
-        pre {
-            font-family: 'Roboto', sans-serif;
-            white-space: pre-wrap;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ffe8cc;
-            line-height: 1.6;
-        }
-
-        /* --- レビュー・いいね セクション --- */
-        .review-box {
-            background-color: #fff;
-            padding: 30px;
-            margin-top: 50px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .review-item {
-            border-bottom: 1px solid #eee;
-            padding: 15px 0;
-        }
-
-        .like-section {
-            font-size: 1.3rem;
-            margin: 30px 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* レスポンシブ (スマホ対応) */
-        @media (max-width: 768px) {
-            .side-banner {
-                display: none; /* スマホではサイドバーを隠すか、別のナビ形式を検討 */
-            }
-            .content {
-                margin-left: 0;
-                width: 100%;
-            }
-            .flex-container {
-                flex-direction: column;
-            }
-        }
+        body { font-family: 'Roboto', 'Sawarabi Mincho', sans-serif; margin: 0; padding: 0; background: linear-gradient(to bottom, #fff4e6, #ffe8cc); color: #5a3e2b; display: flex; }
+        .side-banner { position: fixed; top: 0; left: 0; width: 120px; height: 100%; background-color: rgba(255, 255, 255, 0.9); box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; z-index: 1000; }
+        .side-banner p { margin: 0; font-size: 1.5rem; font-weight: bold; color: #5a3e2b; }
+        .side-banner a { position: fixed; top: 20px; left: -14px; width: 150px; height: 150px; background: url('/images/Wa-lterna-logo.png') no-repeat center center; background-size: contain; text-decoration: none; margin-bottom: 20px; }
+        .side-banner a:hover { transform: scale(1.05); }
+        .content { margin-left: 140px; padding: 40px 20px; width: calc(100% - 140px); box-sizing: border-box; }
+        .recipe-container { max-width: 1000px; margin: 0 auto; background: rgba(255, 255, 255, 0.5); padding: 30px; border-radius: 15px; }
+        .nav-links { margin-bottom: 30px; text-align: left; }
+        .nav-links a { margin-right: 20px; text-decoration: none; color: #d83434; font-weight: bold; }
+        .nav-links a:hover { text-decoration: underline; }
+        .thumbnail { width: 100%; max-height: 500px; object-fit: cover; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { font-family: 'Sawarabi Mincho', serif; font-size: 2.5rem; border-bottom: 3px solid #d83434; padding-bottom: 10px; margin-top: 0; }
+        h3 { border-left: 5px solid #ff7f50; padding-left: 15px; margin-top: 30px; }
+        .flex-container { display: flex; gap: 30px; margin-bottom: 30px; }
+        .flex-item { flex: 1; }
+        pre { font-family: 'Roboto', sans-serif; white-space: pre-wrap; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ffe8cc; line-height: 1.6; }
+        .review-box { background-color: #fff; padding: 30px; margin-top: 50px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .review-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .like-section { font-size: 1.3rem; margin: 30px 0; display: flex; align-items: center; gap: 15px; }
+        @media (max-width: 768px) { .side-banner { display: none; } .content { margin-left: 0; width: 100%; } .flex-container { flex-direction: column; } }
     </style>
 </head>
 <body>
 
     <div class="side-banner">
         <p>Menu</p>
-        <a href="/" aria-label="Home"></a> <!-- /でホームに戻れる-->
+        <a href="/" aria-label="Home"></a>
     </div>
 
     <div class="content">
         <div class="recipe-container">
             <div class="nav-links">
-                <a href="/">← Back to Home</a> <!-- /でホームに戻れる-->
+                <a href="/">← Back to Home</a>
                 <a href="/browse">← Back to Browse</a>
             </div>
 
@@ -216,8 +74,10 @@
             const recipe = await response.json();
             const contentDiv = document.getElementById('recipe-content');
 
-            const imageHtml = recipe.photoUrl 
-                ? `<img src="${recipe.photoUrl}" alt="${recipe.dishName}" class="thumbnail">`
+            // 画像パスの修正部分 (DBの photo カラムを参照)
+            const photoPath = recipe.photo ? `/uploads/${recipe.photo}` : '';
+            const imageHtml = photoPath 
+                ? `<img src="${photoPath}" alt="${recipe.dishName}" class="thumbnail">`
                 : `<div style="width: 100%; height: 300px; background: #e9ecef; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #6c757d; margin-bottom: 30px;">No Image Available</div>`;
 
             const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
@@ -280,8 +140,7 @@
         async function likeRecipe(id) {
             const response = await fetch(`/api/recipes/${id}/like`, { method: 'POST' });
             if (response.ok) {
-                const data = await response.json();
-                fetchRecipeDetails(); // リフレッシュして表示を更新
+                fetchRecipeDetails(); 
                 
                 const likedRecipes = JSON.parse(localStorage.getItem('likedRecipes') || '[]');
                 if (!likedRecipes.includes(id)) {
